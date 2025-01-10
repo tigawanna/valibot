@@ -1,22 +1,22 @@
+/// <reference types="vitest" />
 import { defineConfig } from 'vite';
 
-export default defineConfig(() => {
-  return {
-    test: {
-      environment: 'jsdom',
+export default defineConfig({
+  test: {
+    environment: 'jsdom',
+    fileParallelism: false,
+    isolate: false,
+    coverage: {
+      include: ['src'],
+      exclude: [
+        'src/types',
+        'src/vitest',
+        'src/regex.ts',
+        '**/index.ts',
+        '**/types.ts',
+        '**/*.test.ts',
+        '**/*.test-d.ts',
+      ],
     },
-    build: {
-      target: 'ESNext',
-      outDir: 'dist',
-      lib: {
-        entry: './src/index.ts',
-        formats: ['es', 'cjs'],
-        fileName: (format) => `index.${format === 'es' ? 'mjs' : 'cjs'}`,
-      },
-      rollupOptions: {
-        external: ['vitest'],
-      },
-      minify: false,
-    },
-  };
+  },
 });

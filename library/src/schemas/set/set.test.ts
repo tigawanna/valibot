@@ -1,116 +1,257 @@
 import { describe, expect, test } from 'vitest';
-import { type ValiError } from '../../error/index.ts';
-import { parse } from '../../methods/index.ts';
-import { maxSize, minSize, size } from '../../validations/index.ts';
-import { date } from '../date/index.ts';
-import { number } from '../number/index.ts';
-import { object } from '../object/index.ts';
-import { string } from '../string/index.ts';
-import { set } from './set.ts';
+import type { FailureDataset, InferIssue } from '../../types/index.ts';
+import { expectNoSchemaIssue, expectSchemaIssue } from '../../vitest/index.ts';
+import { string, type StringIssue } from '../string/index.ts';
+import { set, type SetSchema } from './set.ts';
+import type { SetIssue } from './types.ts';
 
 describe('set', () => {
-  test('should pass only sets', () => {
-    const schema1 = set(string());
-    const input1 = new Set().add('hello');
-    const output1 = parse(schema1, input1);
-    expect(output1).toEqual(input1);
-
-    const schema2 = set(date());
-    const input2 = new Set().add(new Date()).add(new Date());
-    const output2 = parse(schema2, input2);
-    expect(output2).toEqual(input2);
-    const input3 = new Set();
-    const output3 = parse(schema2, input3);
-    expect(output3).toEqual(input3);
-
-    expect(() => parse(schema1, new Set().add(123))).toThrowError();
-    expect(() =>
-      parse(schema1, new Set().add('hello').add(123))
-    ).toThrowError();
-    expect(() => parse(schema1, new Map())).toThrowError();
-    expect(() => parse(schema1, 123)).toThrowError();
-    expect(() => parse(schema1, 'test')).toThrowError();
-    expect(() => parse(schema1, {})).toThrowError();
-  });
-
-  test('should throw custom error', () => {
-    const error = 'Value is not an set!';
-    const schema = set(number(), error);
-    expect(() => parse(schema, 'test')).toThrowError(error);
-  });
-
-  test('should throw every issue', () => {
-    const schema = set(number());
-    const input = new Set().add('1').add(2).add('3');
-    expect(() => parse(schema, input)).toThrowError();
-    try {
-      parse(schema, input);
-    } catch (error) {
-      expect((error as ValiError).issues.length).toBe(2);
-    }
-  });
-
-  test('should throw only first issue', () => {
-    const schema = set(number());
-    const input = new Set().add('1').add(2).add('3');
-    const info = { abortEarly: true };
-    expect(() => parse(schema, input, info)).toThrowError();
-    try {
-      parse(schema, input, info);
-    } catch (error) {
-      expect((error as ValiError).issues.length).toBe(1);
-    }
-  });
-
-  test('should return issue path', () => {
-    const schema1 = set(number());
-    const input1 = new Set().add(1).add('2').add(3);
-    const result1 = schema1._parse(input1);
-    expect(result1.issues?.[0].path).toEqual([
-      {
-        schema: 'set',
-        input: input1,
-        key: 1,
-        value: '2',
+  describe('should return schema object', () => {
+    const value = string();
+    type Value = typeof value;
+    const baseSchema: Omit<SetSchema<Value, never>, 'message'> = {
+      kind: 'schema',
+      type: 'set',
+      reference: set,
+      expects: 'Set',
+      value,
+      async: false,
+      '~standard': {
+        version: 1,
+        vendor: 'valibot',
+        validate: expect.any(Function),
       },
-    ]);
+      '~run': expect.any(Function),
+    };
 
-    const schema2 = set(object({ key: string() }));
-    const input2 = new Set().add({ key: 'hello' }).add({ key: 123 });
-    const result2 = schema2._parse(input2);
-    expect(result2.issues?.[0].path).toEqual([
-      {
-        schema: 'set',
-        input: input2,
-        key: 1,
-        value: { key: 123 },
-      },
-      {
-        schema: 'object',
-        input: { key: 123 },
-        key: 'key',
-        value: 123,
-      },
-    ]);
+    test('with undefined message', () => {
+      const schema: SetSchema<Value, undefined> = {
+        ...baseSchema,
+        message: undefined,
+      };
+      expect(set(value)).toStrictEqual(schema);
+      expect(set(value, undefined)).toStrictEqual(schema);
+    });
+
+    test('with string message', () => {
+      expect(set(value, 'message')).toStrictEqual({
+        ...baseSchema,
+        message: 'message',
+      } satisfies SetSchema<Value, 'message'>);
+    });
+
+    test('with function message', () => {
+      const message = () => 'message';
+      expect(set(value, message)).toStrictEqual({
+        ...baseSchema,
+        message,
+      } satisfies SetSchema<Value, typeof message>);
+    });
   });
 
-  test('should execute pipe', () => {
-    const sizeError = 'Invalid size';
+  describe('should return dataset without issues', () => {
+    const schema = set(string());
 
-    const schema1 = set(number(), [size(1)]);
-    const input1 = new Set().add(1);
-    const output1 = parse(schema1, input1);
-    expect(output1).toEqual(input1);
-    expect(() => parse(schema1, new Set())).toThrowError(sizeError);
-    expect(() => parse(schema1, input1.add(2))).toThrowError(sizeError);
+    test('for empty set', () => {
+      expectNoSchemaIssue(schema, [new Set()]);
+    });
 
-    const schema2 = set(string(), 'Error', [minSize(2), maxSize(4)]);
-    const input2 = new Set().add('1').add('2').add('3');
-    const output2 = parse(schema2, input2);
-    expect(output2).toEqual(input2);
-    expect(() => parse(schema2, input2.add('4').add('5'))).toThrowError(
-      sizeError
-    );
-    expect(() => parse(schema2, new Set().add('1'))).toThrowError(sizeError);
+    test('for simple set', () => {
+      expectNoSchemaIssue(schema, [new Set(['foo', 'bar', 'baz'])]);
+    });
+  });
+
+  describe('should return dataset with issues', () => {
+    const schema = set(string(), 'message');
+    const baseIssue: Omit<SetIssue, 'input' | 'received'> = {
+      kind: 'schema',
+      type: 'set',
+      expected: 'Set',
+      message: 'message',
+    };
+
+    // Primitive types
+
+    test('for bigints', () => {
+      expectSchemaIssue(schema, baseIssue, [-1n, 0n, 123n]);
+    });
+
+    test('for booleans', () => {
+      expectSchemaIssue(schema, baseIssue, [true, false]);
+    });
+
+    test('for null', () => {
+      expectSchemaIssue(schema, baseIssue, [null]);
+    });
+
+    test('for numbers', () => {
+      expectSchemaIssue(schema, baseIssue, [-1, 0, 123, 45.67]);
+    });
+
+    test('for undefined', () => {
+      expectSchemaIssue(schema, baseIssue, [undefined]);
+    });
+
+    test('for strings', () => {
+      expectSchemaIssue(schema, baseIssue, ['', 'abc', '123']);
+    });
+
+    test('for symbols', () => {
+      expectSchemaIssue(schema, baseIssue, [Symbol(), Symbol('foo')]);
+    });
+
+    // Complex types
+
+    test('for arrays', () => {
+      expectSchemaIssue(schema, baseIssue, [[], ['value']]);
+    });
+
+    test('for functions', () => {
+      // eslint-disable-next-line @typescript-eslint/no-empty-function
+      expectSchemaIssue(schema, baseIssue, [() => {}, function () {}]);
+    });
+
+    test('for objects', () => {
+      expectSchemaIssue(schema, baseIssue, [{}, { key: 'value' }]);
+    });
+  });
+
+  describe('should return dataset without nested issues', () => {
+    const schema = set(string());
+
+    test('for simple set', () => {
+      expectNoSchemaIssue(schema, [new Set(['foo', 'bar', 'baz'])]);
+    });
+
+    test('for nested set', () => {
+      expectNoSchemaIssue(set(schema), [
+        new Set([new Set(['foo', 'bar']), new Set(['baz'])]),
+      ]);
+    });
+  });
+
+  describe('should return dataset with nested issues', () => {
+    const schema = set(string());
+
+    const baseInfo = {
+      message: expect.any(String),
+      requirement: undefined,
+      issues: undefined,
+      lang: undefined,
+      abortEarly: undefined,
+      abortPipeEarly: undefined,
+    };
+
+    const stringIssue: StringIssue = {
+      ...baseInfo,
+      kind: 'schema',
+      type: 'string',
+      input: 123,
+      expected: 'string',
+      received: '123',
+      path: [
+        {
+          type: 'set',
+          origin: 'value',
+          input: new Set(['foo', 123, 'baz', null]),
+          key: null,
+          value: 123,
+        },
+      ],
+    };
+
+    test('for wrong values', () => {
+      expect(
+        schema['~run']({ value: new Set(['foo', 123, 'baz', null]) }, {})
+      ).toStrictEqual({
+        typed: false,
+        value: new Set(['foo', 123, 'baz', null]),
+        issues: [
+          stringIssue,
+          {
+            ...baseInfo,
+            kind: 'schema',
+            type: 'string',
+            input: null,
+            expected: 'string',
+            received: 'null',
+            path: [
+              {
+                type: 'set',
+                origin: 'value',
+                input: new Set(['foo', 123, 'baz', null]),
+                key: null,
+                value: null,
+              },
+            ],
+          },
+        ],
+      } satisfies FailureDataset<InferIssue<typeof schema>>);
+    });
+
+    test('with abort early', () => {
+      expect(
+        schema['~run'](
+          { value: new Set(['foo', 123, 'baz', null]) },
+          { abortEarly: true }
+        )
+      ).toStrictEqual({
+        typed: false,
+        value: new Set(['foo']),
+        issues: [{ ...stringIssue, abortEarly: true }],
+      } satisfies FailureDataset<InferIssue<typeof schema>>);
+    });
+
+    test('for wrong nested values', () => {
+      const nestedSchema = set(schema);
+      const input = new Set([new Set([123, 'foo']), 'bar', new Set()]);
+      expect(nestedSchema['~run']({ value: input }, {})).toStrictEqual({
+        typed: false,
+        value: input,
+        issues: [
+          {
+            ...baseInfo,
+            kind: 'schema',
+            type: 'string',
+            input: 123,
+            expected: 'string',
+            received: '123',
+            path: [
+              {
+                type: 'set',
+                origin: 'value',
+                input,
+                key: null,
+                value: new Set([123, 'foo']),
+              },
+              {
+                type: 'set',
+                origin: 'value',
+                input: new Set([123, 'foo']),
+                key: null,
+                value: 123,
+              },
+            ],
+          },
+          {
+            ...baseInfo,
+            kind: 'schema',
+            type: 'set',
+            input: 'bar',
+            expected: 'Set',
+            received: '"bar"',
+            path: [
+              {
+                type: 'set',
+                origin: 'value',
+                input,
+                key: null,
+                value: 'bar',
+              },
+            ],
+          },
+        ],
+      } satisfies FailureDataset<InferIssue<typeof nestedSchema>>);
+    });
   });
 });

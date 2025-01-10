@@ -1,108 +1,196 @@
 import type {
+  BaseIssue,
   BaseSchema,
   BaseSchemaAsync,
   ErrorMessage,
-  Input,
-  Issues,
-  Output,
-} from '../../types.ts';
-import { getSchemaIssues, getOutput } from '../../utils/index.ts';
+  FailureDataset,
+  InferInput,
+  InferIssue,
+  InferOutput,
+  MaybeReadonly,
+  OutputDataset,
+  PartialDataset,
+  SuccessDataset,
+} from '../../types/index.ts';
+import {
+  _addIssue,
+  _getStandardProps,
+  _joinExpects,
+} from '../../utils/index.ts';
+import type { UnionIssue } from './types.ts';
+import { _subIssues } from './utils/index.ts';
 
 /**
  * Union options async type.
  */
-export type UnionOptionsAsync = [
-  BaseSchema | BaseSchemaAsync,
-  BaseSchema | BaseSchemaAsync,
-  ...(BaseSchema[] | BaseSchemaAsync[])
-];
+export type UnionOptionsAsync = MaybeReadonly<
+  (
+    | BaseSchema<unknown, unknown, BaseIssue<unknown>>
+    | BaseSchemaAsync<unknown, unknown, BaseIssue<unknown>>
+  )[]
+>;
 
 /**
  * Union schema async type.
  */
-export type UnionSchemaAsync<
-  TUnionOptions extends UnionOptionsAsync,
-  TOutput = Output<TUnionOptions[number]>
-> = BaseSchemaAsync<Input<TUnionOptions[number]>, TOutput> & {
-  schema: 'union';
-  union: TUnionOptions;
-};
+export interface UnionSchemaAsync<
+  TOptions extends UnionOptionsAsync,
+  TMessage extends
+    | ErrorMessage<UnionIssue<InferIssue<TOptions[number]>>>
+    | undefined,
+> extends BaseSchemaAsync<
+    InferInput<TOptions[number]>,
+    InferOutput<TOptions[number]>,
+    UnionIssue<InferIssue<TOptions[number]>> | InferIssue<TOptions[number]>
+  > {
+  /**
+   * The schema type.
+   */
+  readonly type: 'union';
+  /**
+   * The schema reference.
+   */
+  readonly reference: typeof unionAsync;
+  /**
+   * The union options.
+   */
+  readonly options: TOptions;
+  /**
+   * The error message.
+   */
+  readonly message: TMessage;
+}
 
 /**
- * Creates an async union schema.
+ * Creates an union schema.
  *
- * @param union The union schema.
- * @param error The error message.
+ * @param options The union options.
  *
- * @returns An async union schema.
+ * @returns An union schema.
  */
-export function unionAsync<TUnionOptions extends UnionOptionsAsync>(
-  union: TUnionOptions,
-  error?: ErrorMessage
-): UnionSchemaAsync<TUnionOptions> {
+export function unionAsync<const TOptions extends UnionOptionsAsync>(
+  options: TOptions
+): UnionSchemaAsync<TOptions, undefined>;
+
+/**
+ * Creates an union schema.
+ *
+ * @param options The union options.
+ * @param message The error message.
+ *
+ * @returns An union schema.
+ */
+export function unionAsync<
+  const TOptions extends UnionOptionsAsync,
+  const TMessage extends
+    | ErrorMessage<UnionIssue<InferIssue<TOptions[number]>>>
+    | undefined,
+>(options: TOptions, message: TMessage): UnionSchemaAsync<TOptions, TMessage>;
+
+// @__NO_SIDE_EFFECTS__
+export function unionAsync(
+  options: UnionOptionsAsync,
+  message?: ErrorMessage<UnionIssue<BaseIssue<unknown>>>
+): UnionSchemaAsync<
+  UnionOptionsAsync,
+  ErrorMessage<UnionIssue<BaseIssue<unknown>>> | undefined
+> {
   return {
-    /**
-     * The schema type.
-     */
-    schema: 'union',
-
-    /**
-     * The union schema.
-     */
-    union,
-
-    /**
-     * Whether it's async.
-     */
+    kind: 'schema',
+    type: 'union',
+    reference: unionAsync,
+    expects: _joinExpects(
+      options.map((option) => option.expects),
+      '|'
+    ),
     async: true,
+    options,
+    message,
+    get '~standard'() {
+      return _getStandardProps(this);
+    },
+    async '~run'(dataset, config) {
+      // Create variables to collect datasets
+      let validDataset: SuccessDataset<unknown> | undefined;
+      let typedDatasets:
+        | PartialDataset<unknown, BaseIssue<unknown>>[]
+        | undefined;
+      let untypedDatasets: FailureDataset<BaseIssue<unknown>>[] | undefined;
 
-    /**
-     * Parses unknown input based on its schema.
-     *
-     * @param input The input to be parsed.
-     * @param info The parse info.
-     *
-     * @returns The parsed output.
-     */
-    async _parse(input, info) {
-      // Create issues and output
-      let issues: Issues | undefined;
-      let output: [Output<TUnionOptions[number]>] | undefined;
+      // Parse schema of each option and collect datasets
+      for (const schema of this.options) {
+        const optionDataset = await schema['~run'](
+          { value: dataset.value },
+          config
+        );
 
-      // Parse schema of each option
-      for (const schema of union) {
-        const result = await schema._parse(input, info);
-
-        // If there are issues, capture them
-        if (result.issues) {
-          if (issues) {
-            for (const issue of result.issues) {
-              issues.push(issue);
+        // If typed, add it to valid or typed datasets
+        if (optionDataset.typed) {
+          // If there are issues, add it to typed datasets
+          if (optionDataset.issues) {
+            if (typedDatasets) {
+              typedDatasets.push(optionDataset);
+            } else {
+              typedDatasets = [optionDataset];
             }
+
+            // Otherwise, add it as valid dataset and break loop
           } else {
-            issues = result.issues;
+            validDataset = optionDataset;
+            break;
           }
 
-          // Otherwise, set output and break loop
+          // Otherwise, add it to untyped datasets
         } else {
-          // Note: Output is nested in array, so that also a falsy value
-          // further down can be recognized as valid value
-          output = [result.output];
-          break;
+          if (untypedDatasets) {
+            untypedDatasets.push(optionDataset);
+          } else {
+            untypedDatasets = [optionDataset];
+          }
         }
       }
 
-      // Return output or issues
-      return output
-        ? getOutput(output[0])
-        : getSchemaIssues(
-            info,
-            'type',
-            'union',
-            error || 'Invalid type',
-            input,
-            issues
-          );
+      // If there is a valid dataset, return it
+      if (validDataset) {
+        return validDataset;
+      }
+
+      // If there are typed datasets process only those
+      if (typedDatasets) {
+        // If there is only one typed dataset, return it
+        if (typedDatasets.length === 1) {
+          return typedDatasets[0];
+        }
+
+        // Otherwise, add issue with typed subissues
+        // Hint: If there is more than one typed dataset, we use a general
+        // union issue with subissues because the issues could contradict
+        // each other.
+        _addIssue(this, 'type', dataset, config, {
+          issues: _subIssues(typedDatasets),
+        });
+
+        // And set typed to `true`
+        // @ts-expect-error
+        dataset.typed = true;
+
+        // Otherwise, if there is exactly one untyped dataset, return it
+      } else if (untypedDatasets?.length === 1) {
+        return untypedDatasets[0];
+
+        // Otherwise, add issue with untyped subissues
+      } else {
+        // Hint: If there are zero or more than one untyped results, we use a
+        // general union issue with subissues because the issues could
+        // contradict each other.
+        _addIssue(this, 'type', dataset, config, {
+          issues: _subIssues(untypedDatasets),
+        });
+      }
+
+      // Return output dataset
+      // @ts-expect-error
+      return dataset as OutputDataset<unknown, BaseIssue<unknown>>;
     },
   };
 }

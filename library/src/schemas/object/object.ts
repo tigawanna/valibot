@@ -1,251 +1,176 @@
-import type { BaseSchema, ErrorMessage, Issues, Pipe } from '../../types.ts';
-import {
-  executePipe,
-  getIssues,
-  getRestAndDefaultArgs,
-  getSchemaIssues,
-} from '../../utils/index.ts';
-import type { ObjectOutput, ObjectInput, ObjectPathItem } from './types.ts';
-
-/**
- * Object shape type.
- */
-export type ObjectEntries = Record<string, BaseSchema<any>>;
+import type {
+  BaseSchema,
+  ErrorMessage,
+  InferObjectInput,
+  InferObjectIssue,
+  InferObjectOutput,
+  ObjectEntries,
+  ObjectPathItem,
+  OutputDataset,
+} from '../../types/index.ts';
+import { _addIssue, _getStandardProps } from '../../utils/index.ts';
+import type { ObjectIssue } from './types.ts';
 
 /**
  * Object schema type.
  */
-export type ObjectSchema<
-  TObjectEntries extends ObjectEntries,
-  TObjectRest extends BaseSchema | undefined = undefined,
-  TOutput = ObjectOutput<TObjectEntries, TObjectRest>
-> = BaseSchema<ObjectInput<TObjectEntries, TObjectRest>, TOutput> & {
-  schema: 'object';
-  object: { entries: TObjectEntries; rest: TObjectRest };
-};
+export interface ObjectSchema<
+  TEntries extends ObjectEntries,
+  TMessage extends ErrorMessage<ObjectIssue> | undefined,
+> extends BaseSchema<
+    InferObjectInput<TEntries>,
+    InferObjectOutput<TEntries>,
+    ObjectIssue | InferObjectIssue<TEntries>
+  > {
+  /**
+   * The schema type.
+   */
+  readonly type: 'object';
+  /**
+   * The schema reference.
+   */
+  readonly reference: typeof object;
+  /**
+   * The expected property.
+   */
+  readonly expects: 'Object';
+  /**
+   * The entries schema.
+   */
+  readonly entries: TEntries;
+  /**
+   * The error message.
+   */
+  readonly message: TMessage;
+}
 
 /**
  * Creates an object schema.
  *
- * @param entries The object entries.
- * @param pipe A validation and transformation pipe.
+ * Hint: This schema removes unknown entries. The output will only include the
+ * entries you specify. To include unknown entries, use `looseObject`. To
+ * return an issue for unknown entries, use `strictObject`. To include and
+ * validate unknown entries, use `objectWithRest`.
+ *
+ * @param entries The entries schema.
  *
  * @returns An object schema.
  */
-export function object<TObjectEntries extends ObjectEntries>(
-  entries: TObjectEntries,
-  pipe?: Pipe<ObjectOutput<TObjectEntries, undefined>>
-): ObjectSchema<TObjectEntries>;
+export function object<const TEntries extends ObjectEntries>(
+  entries: TEntries
+): ObjectSchema<TEntries, undefined>;
 
 /**
  * Creates an object schema.
  *
- * @param entries The object entries.
- * @param error The error message.
- * @param pipe A validation and transformation pipe.
+ * Hint: This schema removes unknown entries. The output will only include the
+ * entries you specify. To include unknown entries, use `looseObject`. To
+ * return an issue for unknown entries, use `strictObject`. To include and
+ * validate unknown entries, use `objectWithRest`.
  *
- * @returns An object schema.
- */
-export function object<TObjectEntries extends ObjectEntries>(
-  entries: TObjectEntries,
-  error?: ErrorMessage,
-  pipe?: Pipe<ObjectOutput<TObjectEntries, undefined>>
-): ObjectSchema<TObjectEntries>;
-
-/**
- * Creates an object schema.
- *
- * @param entries The object entries.
- * @param rest The object rest.
- * @param pipe A validation and transformation pipe.
- *
- * @returns An object schema.
- */
-export function object<
-  TObjectEntries extends ObjectEntries,
-  TObjectRest extends BaseSchema | undefined
->(
-  entries: TObjectEntries,
-  rest: TObjectRest,
-  pipe?: Pipe<ObjectOutput<TObjectEntries, TObjectRest>>
-): ObjectSchema<TObjectEntries, TObjectRest>;
-
-/**
- * Creates an object schema.
- *
- * @param entries The object entries.
- * @param rest The object rest.
- * @param error The error message.
- * @param pipe A validation and transformation pipe.
+ * @param entries The entries schema.
+ * @param message The error message.
  *
  * @returns An object schema.
  */
 export function object<
-  TObjectEntries extends ObjectEntries,
-  TObjectRest extends BaseSchema | undefined
->(
-  entries: TObjectEntries,
-  rest: TObjectRest,
-  error?: ErrorMessage,
-  pipe?: Pipe<ObjectOutput<TObjectEntries, TObjectRest>>
-): ObjectSchema<TObjectEntries, TObjectRest>;
+  const TEntries extends ObjectEntries,
+  const TMessage extends ErrorMessage<ObjectIssue> | undefined,
+>(entries: TEntries, message: TMessage): ObjectSchema<TEntries, TMessage>;
 
-export function object<
-  TObjectEntries extends ObjectEntries,
-  TObjectRest extends BaseSchema | undefined = undefined
->(
-  entries: TObjectEntries,
-  arg2?:
-    | Pipe<ObjectOutput<TObjectEntries, TObjectRest>>
-    | ErrorMessage
-    | TObjectRest,
-  arg3?: Pipe<ObjectOutput<TObjectEntries, TObjectRest>> | ErrorMessage,
-  arg4?: Pipe<ObjectOutput<TObjectEntries, TObjectRest>>
-): ObjectSchema<TObjectEntries, TObjectRest> {
-  // Get rest, error and pipe argument
-  const [rest, error, pipe] = getRestAndDefaultArgs<
-    TObjectRest,
-    Pipe<ObjectOutput<TObjectEntries, TObjectRest>>
-  >(arg2, arg3, arg4);
-
-  // Create cached entries
-  let cachedEntries: [string, BaseSchema<any>][];
-
-  // Create and return object schema
+// @__NO_SIDE_EFFECTS__
+export function object(
+  entries: ObjectEntries,
+  message?: ErrorMessage<ObjectIssue>
+): ObjectSchema<ObjectEntries, ErrorMessage<ObjectIssue> | undefined> {
   return {
-    /**
-     * The schema type.
-     */
-    schema: 'object',
-
-    /**
-     * The object entries and rest schema.
-     */
-    object: { entries, rest },
-
-    /**
-     * Whether it's async.
-     */
+    kind: 'schema',
+    type: 'object',
+    reference: object,
+    expects: 'Object',
     async: false,
+    entries,
+    message,
+    get '~standard'() {
+      return _getStandardProps(this);
+    },
+    '~run'(dataset, config) {
+      // Get input value from dataset
+      const input = dataset.value;
 
-    /**
-     * Parses unknown input based on its schema.
-     *
-     * @param input The input to be parsed.
-     * @param info The parse info.
-     *
-     * @returns The parsed output.
-     */
-    _parse(input, info) {
-      // Check type of input
-      if (!input || typeof input !== 'object') {
-        return getSchemaIssues(
-          info,
-          'type',
-          'object',
-          error || 'Invalid type',
-          input
-        );
-      }
+      // If root type is valid, check nested types
+      if (input && typeof input === 'object') {
+        // Set typed to `true` and value to blank object
+        // @ts-expect-error
+        dataset.typed = true;
+        dataset.value = {};
 
-      // Cache object entries lazy
-      cachedEntries = cachedEntries || Object.entries(entries);
+        // Parse schema of each entry
+        // Hint: We do not distinguish between missing and `undefined` entries.
+        // The reason for this decision is that it reduces the bundle size, and
+        // we also expect that most users will expect this behavior.
+        for (const key in this.entries) {
+          // Get and parse value of key
+          const value: unknown = input[key as keyof typeof input];
+          const valueDataset = this.entries[key]['~run']({ value }, config);
 
-      // Create issues and output
-      let issues: Issues | undefined;
-      const output: Record<string, any> = {};
+          // If there are issues, capture them
+          if (valueDataset.issues) {
+            // Create object path item
+            const pathItem: ObjectPathItem = {
+              type: 'object',
+              origin: 'value',
+              input: input as Record<string, unknown>,
+              key,
+              value,
+            };
 
-      // Parse schema of each key
-      for (const [key, schema] of cachedEntries) {
-        const value = (input as Record<string, unknown>)[key];
-        const result = schema._parse(value, info);
-
-        // If there are issues, capture them
-        if (result.issues) {
-          // Create object path item
-          const pathItem: ObjectPathItem = {
-            schema: 'object',
-            input,
-            key,
-            value,
-          };
-
-          // Add modified result issues to issues
-          for (const issue of result.issues) {
-            if (issue.path) {
-              issue.path.unshift(pathItem);
-            } else {
-              issue.path = [pathItem];
+            // Add modified entry dataset issues to issues
+            for (const issue of valueDataset.issues) {
+              if (issue.path) {
+                issue.path.unshift(pathItem);
+              } else {
+                // @ts-expect-error
+                issue.path = [pathItem];
+              }
+              // @ts-expect-error
+              dataset.issues?.push(issue);
             }
-            issues?.push(issue);
-          }
-          if (!issues) {
-            issues = result.issues;
-          }
+            if (!dataset.issues) {
+              // @ts-expect-error
+              dataset.issues = valueDataset.issues;
+            }
 
-          // If necessary, abort early
-          if (info?.abortEarly) {
-            break;
-          }
-
-          // Otherwise, add value to object
-        } else if (result.output !== undefined || key in input) {
-          output[key] = result.output;
-        }
-      }
-
-      // If necessary parse schema of each rest entry
-      if (rest && !(info?.abortEarly && issues)) {
-        for (const key in input) {
-          if (!(key in entries)) {
-            const value = (input as Record<string, unknown>)[key];
-            const result = rest._parse(value, info);
-
-            // If there are issues, capture them
-            if (result.issues) {
-              // Create object path item
-              const pathItem: ObjectPathItem = {
-                schema: 'object',
-                input,
-                key,
-                value,
-              };
-
-              // Add modified result issues to issues
-              for (const issue of result.issues) {
-                if (issue.path) {
-                  issue.path.unshift(pathItem);
-                } else {
-                  issue.path = [pathItem];
-                }
-                issues?.push(issue);
-              }
-              if (!issues) {
-                issues = result.issues;
-              }
-
-              // If necessary, abort early
-              if (info?.abortEarly) {
-                break;
-              }
-
-              // Otherwise, add value to object
-            } else {
-              output[key] = result.output;
+            // If necessary, abort early
+            if (config.abortEarly) {
+              dataset.typed = false;
+              break;
             }
           }
+
+          // If not typed, set typed to `false`
+          if (!valueDataset.typed) {
+            dataset.typed = false;
+          }
+
+          // Add entry to dataset if necessary
+          if (valueDataset.value !== undefined || key in input) {
+            // @ts-expect-error
+            dataset.value[key] = valueDataset.value;
+          }
         }
+
+        // Otherwise, add object issue
+      } else {
+        _addIssue(this, 'type', dataset, config);
       }
 
-      // Return issues or pipe result
-      return issues
-        ? getIssues(issues)
-        : executePipe(
-            output as ObjectOutput<TObjectEntries, TObjectRest>,
-            pipe,
-            info,
-            'object'
-          );
+      // Return output dataset
+      // @ts-expect-error
+      return dataset as OutputDataset<
+        InferObjectOutput<ObjectEntries>,
+        ObjectIssue | InferObjectIssue<ObjectEntries>
+      >;
     },
   };
 }

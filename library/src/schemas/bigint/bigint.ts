@@ -1,77 +1,94 @@
-import type { BaseSchema, ErrorMessage, Pipe } from '../../types.ts';
-import {
-  executePipe,
-  getDefaultArgs,
-  getSchemaIssues,
-} from '../../utils/index.ts';
+import type {
+  BaseIssue,
+  BaseSchema,
+  ErrorMessage,
+  OutputDataset,
+} from '../../types/index.ts';
+import { _addIssue, _getStandardProps } from '../../utils/index.ts';
+
+/**
+ * Bigint issue type.
+ */
+export interface BigintIssue extends BaseIssue<unknown> {
+  /**
+   * The issue kind.
+   */
+  readonly kind: 'schema';
+  /**
+   * The issue type.
+   */
+  readonly type: 'bigint';
+  /**
+   * The expected property.
+   */
+  readonly expected: 'bigint';
+}
 
 /**
  * Bigint schema type.
  */
-export type BigintSchema<TOutput = bigint> = BaseSchema<bigint, TOutput> & {
-  schema: 'bigint';
-};
+export interface BigintSchema<
+  TMessage extends ErrorMessage<BigintIssue> | undefined,
+> extends BaseSchema<bigint, bigint, BigintIssue> {
+  /**
+   * The schema type.
+   */
+  readonly type: 'bigint';
+  /**
+   * The schema reference.
+   */
+  readonly reference: typeof bigint;
+  /**
+   * The expected property.
+   */
+  readonly expects: 'bigint';
+  /**
+   * The error message.
+   */
+  readonly message: TMessage;
+}
 
 /**
  * Creates a bigint schema.
  *
- * @param pipe A validation and transformation pipe.
- *
  * @returns A bigint schema.
  */
-export function bigint(pipe?: Pipe<bigint>): BigintSchema;
+export function bigint(): BigintSchema<undefined>;
 
 /**
  * Creates a bigint schema.
  *
- * @param error The error message.
- * @param pipe A validation and transformation pipe.
+ * @param message The error message.
  *
  * @returns A bigint schema.
  */
-export function bigint(error?: ErrorMessage, pipe?: Pipe<bigint>): BigintSchema;
+export function bigint<
+  const TMessage extends ErrorMessage<BigintIssue> | undefined,
+>(message: TMessage): BigintSchema<TMessage>;
 
+// @__NO_SIDE_EFFECTS__
 export function bigint(
-  arg1?: ErrorMessage | Pipe<bigint>,
-  arg2?: Pipe<bigint>
-): BigintSchema {
-  // Get error and pipe argument
-  const [error, pipe] = getDefaultArgs(arg1, arg2);
-
-  // Create and return bigint schema
+  message?: ErrorMessage<BigintIssue>
+): BigintSchema<ErrorMessage<BigintIssue> | undefined> {
   return {
-    /**
-     * The schema type.
-     */
-    schema: 'bigint',
-
-    /**
-     * Whether it's async.
-     */
+    kind: 'schema',
+    type: 'bigint',
+    reference: bigint,
+    expects: 'bigint',
     async: false,
-
-    /**
-     * Parses unknown input based on its schema.
-     *
-     * @param input The input to be parsed.
-     * @param info The parse info.
-     *
-     * @returns The parsed output.
-     */
-    _parse(input, info) {
-      // Check type of input
-      if (typeof input !== 'bigint') {
-        return getSchemaIssues(
-          info,
-          'type',
-          'bigint',
-          error || 'Invalid type',
-          input
-        );
+    message,
+    get '~standard'() {
+      return _getStandardProps(this);
+    },
+    '~run'(dataset, config) {
+      if (typeof dataset.value === 'bigint') {
+        // @ts-expect-error
+        dataset.typed = true;
+      } else {
+        _addIssue(this, 'type', dataset, config);
       }
-
-      // Execute pipe and return result
-      return executePipe(input, pipe, info, 'bigint');
+      // @ts-expect-error
+      return dataset as OutputDataset<bigint, BigintIssue>;
     },
   };
 }

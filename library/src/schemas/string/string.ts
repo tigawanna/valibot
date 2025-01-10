@@ -1,77 +1,94 @@
-import type { BaseSchema, ErrorMessage, Pipe } from '../../types.ts';
-import {
-  executePipe,
-  getDefaultArgs,
-  getSchemaIssues,
-} from '../../utils/index.ts';
+import type {
+  BaseIssue,
+  BaseSchema,
+  ErrorMessage,
+  OutputDataset,
+} from '../../types/index.ts';
+import { _addIssue, _getStandardProps } from '../../utils/index.ts';
+
+/**
+ * String issue type.
+ */
+export interface StringIssue extends BaseIssue<unknown> {
+  /**
+   * The issue kind.
+   */
+  readonly kind: 'schema';
+  /**
+   * The issue type.
+   */
+  readonly type: 'string';
+  /**
+   * The expected property.
+   */
+  readonly expected: 'string';
+}
 
 /**
  * String schema type.
  */
-export type StringSchema<TOutput = string> = BaseSchema<string, TOutput> & {
-  schema: 'string';
-};
+export interface StringSchema<
+  TMessage extends ErrorMessage<StringIssue> | undefined,
+> extends BaseSchema<string, string, StringIssue> {
+  /**
+   * The schema type.
+   */
+  readonly type: 'string';
+  /**
+   * The schema reference.
+   */
+  readonly reference: typeof string;
+  /**
+   * The expected property.
+   */
+  readonly expects: 'string';
+  /**
+   * The error message.
+   */
+  readonly message: TMessage;
+}
 
 /**
  * Creates a string schema.
  *
- * @param pipe A validation and transformation pipe.
- *
  * @returns A string schema.
  */
-export function string(pipe?: Pipe<string>): StringSchema;
+export function string(): StringSchema<undefined>;
 
 /**
  * Creates a string schema.
  *
- * @param error The error message.
- * @param pipe A validation and transformation pipe.
+ * @param message The error message.
  *
  * @returns A string schema.
  */
-export function string(error?: ErrorMessage, pipe?: Pipe<string>): StringSchema;
+export function string<
+  const TMessage extends ErrorMessage<StringIssue> | undefined,
+>(message: TMessage): StringSchema<TMessage>;
 
+// @__NO_SIDE_EFFECTS__
 export function string(
-  arg1?: ErrorMessage | Pipe<string>,
-  arg2?: Pipe<string>
-): StringSchema {
-  // Get error and pipe argument
-  const [error, pipe] = getDefaultArgs(arg1, arg2);
-
-  // Create and return string schema
+  message?: ErrorMessage<StringIssue>
+): StringSchema<ErrorMessage<StringIssue> | undefined> {
   return {
-    /**
-     * The schema type.
-     */
-    schema: 'string',
-
-    /**
-     * Whether it's async.
-     */
+    kind: 'schema',
+    type: 'string',
+    reference: string,
+    expects: 'string',
     async: false,
-
-    /**
-     * Parses unknown input based on its schema.
-     *
-     * @param input The input to be parsed.
-     * @param info The parse info.
-     *
-     * @returns The parsed output.
-     */
-    _parse(input, info) {
-      // Check type of input
-      if (typeof input !== 'string') {
-        return getSchemaIssues(
-          info,
-          'type',
-          'string',
-          error || 'Invalid type',
-          input
-        );
+    message,
+    get '~standard'() {
+      return _getStandardProps(this);
+    },
+    '~run'(dataset, config) {
+      if (typeof dataset.value === 'string') {
+        // @ts-expect-error
+        dataset.typed = true;
+      } else {
+        _addIssue(this, 'type', dataset, config);
       }
-
-      // Execute pipe and return result
-      return executePipe(input, pipe, info, 'string');
+      // @ts-expect-error
+      return dataset as OutputDataset<string, StringIssue>;
     },
   };
 }

@@ -1,74 +1,121 @@
 import type {
+  BaseIssue,
   BaseSchema,
   BaseSchemaAsync,
   ErrorMessage,
-  Input,
-  Output,
-} from '../../types.ts';
-import { getSchemaIssues } from '../../utils/index.ts';
-import type { NonNullable } from './nonNullable.ts';
+  OutputDataset,
+} from '../../types/index.ts';
+import { _addIssue, _getStandardProps } from '../../utils/index.ts';
+import type {
+  InferNonNullableInput,
+  InferNonNullableIssue,
+  InferNonNullableOutput,
+  NonNullableIssue,
+} from './types.ts';
 
 /**
  * Non nullable schema async type.
  */
-export type NonNullableSchemaAsync<
-  TWrapped extends BaseSchema | BaseSchemaAsync,
-  TOutput = NonNullable<Output<TWrapped>>
-> = BaseSchemaAsync<NonNullable<Input<TWrapped>>, TOutput> & {
-  schema: 'non_nullable';
-  wrapped: TWrapped;
-};
+export interface NonNullableSchemaAsync<
+  TWrapped extends
+    | BaseSchema<unknown, unknown, BaseIssue<unknown>>
+    | BaseSchemaAsync<unknown, unknown, BaseIssue<unknown>>,
+  TMessage extends ErrorMessage<NonNullableIssue> | undefined,
+> extends BaseSchemaAsync<
+    InferNonNullableInput<TWrapped>,
+    InferNonNullableOutput<TWrapped>,
+    NonNullableIssue | InferNonNullableIssue<TWrapped>
+  > {
+  /**
+   * The schema type.
+   */
+  readonly type: 'non_nullable';
+  /**
+   * The schema reference.
+   */
+  readonly reference: typeof nonNullableAsync;
+  /**
+   * The expected property.
+   */
+  readonly expects: '!null';
+  /**
+   * The wrapped schema.
+   */
+  readonly wrapped: TWrapped;
+  /**
+   * The error message.
+   */
+  readonly message: TMessage;
+}
 
 /**
- * Creates an async non nullable schema.
+ * Creates a non nullable schema.
  *
  * @param wrapped The wrapped schema.
- * @param error The error message.
  *
- * @returns An async non nullable schema.
+ * @returns A non nullable schema.
  */
-export function nonNullableAsync<TWrapped extends BaseSchema | BaseSchemaAsync>(
+export function nonNullableAsync<
+  const TWrapped extends
+    | BaseSchema<unknown, unknown, BaseIssue<unknown>>
+    | BaseSchemaAsync<unknown, unknown, BaseIssue<unknown>>,
+>(wrapped: TWrapped): NonNullableSchemaAsync<TWrapped, undefined>;
+
+/**
+ * Creates a non nullable schema.
+ *
+ * @param wrapped The wrapped schema.
+ * @param message The error message.
+ *
+ * @returns A non nullable schema.
+ */
+export function nonNullableAsync<
+  const TWrapped extends
+    | BaseSchema<unknown, unknown, BaseIssue<unknown>>
+    | BaseSchemaAsync<unknown, unknown, BaseIssue<unknown>>,
+  const TMessage extends ErrorMessage<NonNullableIssue> | undefined,
+>(
   wrapped: TWrapped,
-  error?: ErrorMessage
-): NonNullableSchemaAsync<TWrapped> {
+  message: TMessage
+): NonNullableSchemaAsync<TWrapped, TMessage>;
+
+// @__NO_SIDE_EFFECTS__
+export function nonNullableAsync(
+  wrapped:
+    | BaseSchema<unknown, unknown, BaseIssue<unknown>>
+    | BaseSchemaAsync<unknown, unknown, BaseIssue<unknown>>,
+  message?: ErrorMessage<NonNullableIssue> | undefined
+): NonNullableSchemaAsync<
+  | BaseSchema<unknown, unknown, BaseIssue<unknown>>
+  | BaseSchemaAsync<unknown, unknown, BaseIssue<unknown>>,
+  ErrorMessage<NonNullableIssue> | undefined
+> {
   return {
-    /**
-     * The schema type.
-     */
-    schema: 'non_nullable',
-
-    /**
-     * The wrapped schema.
-     */
-    wrapped,
-
-    /**
-     * Whether it's async.
-     */
+    kind: 'schema',
+    type: 'non_nullable',
+    reference: nonNullableAsync,
+    expects: '!null',
     async: true,
-
-    /**
-     * Parses unknown input based on its schema.
-     *
-     * @param input The input to be parsed.
-     * @param info The parse info.
-     *
-     * @returns The parsed output.
-     */
-    async _parse(input, info) {
-      // Allow `null` values not to pass
-      if (input === null) {
-        return getSchemaIssues(
-          info,
-          'type',
-          'non_nullable',
-          error || 'Invalid type',
-          input
-        );
+    wrapped,
+    message,
+    get '~standard'() {
+      return _getStandardProps(this);
+    },
+    async '~run'(dataset, config) {
+      // If value is not `null`, run wrapped schema
+      if (dataset.value !== null) {
+        // @ts-expect-error
+        dataset = await this.wrapped['~run'](dataset, config);
       }
 
-      // Return result of wrapped schema
-      return wrapped._parse(input, info);
+      // If value is `null`, add issue to dataset
+      if (dataset.value === null) {
+        _addIssue(this, 'type', dataset, config);
+      }
+
+      // Return output dataset
+      // @ts-expect-error
+      return dataset as OutputDataset<unknown, BaseIssue<unknown>>;
     },
   };
 }

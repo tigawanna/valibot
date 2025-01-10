@@ -1,48 +1,102 @@
 import {
-  enumType,
-  type EnumSchema,
+  type LooseObjectIssue,
+  type LooseObjectSchema,
+  type LooseObjectSchemaAsync,
+  type ObjectIssue,
   type ObjectSchema,
   type ObjectSchemaAsync,
+  type ObjectWithRestIssue,
+  type ObjectWithRestSchema,
+  type ObjectWithRestSchemaAsync,
+  picklist,
+  type PicklistIssue,
+  type PicklistSchema,
+  type StrictObjectIssue,
+  type StrictObjectSchema,
+  type StrictObjectSchemaAsync,
 } from '../../schemas/index.ts';
+import type {
+  BaseIssue,
+  BaseSchema,
+  ErrorMessage,
+  ObjectEntries,
+  ObjectEntriesAsync,
+  UnionToTuple,
+} from '../../types/index.ts';
 
 /**
- * Converts union to intersection types.
+ * Schema type.
  */
-type UnionToIntersection<T> = (
-  T extends never ? never : (arg: T) => never
-) extends (arg: infer U) => never
-  ? U
-  : never;
+type Schema =
+  | LooseObjectSchema<ObjectEntries, ErrorMessage<LooseObjectIssue> | undefined>
+  | LooseObjectSchemaAsync<
+      ObjectEntriesAsync,
+      ErrorMessage<LooseObjectIssue> | undefined
+    >
+  | ObjectSchema<ObjectEntries, ErrorMessage<ObjectIssue> | undefined>
+  | ObjectSchemaAsync<ObjectEntriesAsync, ErrorMessage<ObjectIssue> | undefined>
+  | ObjectWithRestSchema<
+      ObjectEntries,
+      BaseSchema<unknown, unknown, BaseIssue<unknown>>,
+      ErrorMessage<ObjectWithRestIssue> | undefined
+    >
+  | ObjectWithRestSchemaAsync<
+      ObjectEntriesAsync,
+      BaseSchema<unknown, unknown, BaseIssue<unknown>>,
+      ErrorMessage<ObjectWithRestIssue> | undefined
+    >
+  | StrictObjectSchema<
+      ObjectEntries,
+      ErrorMessage<StrictObjectIssue> | undefined
+    >
+  | StrictObjectSchemaAsync<
+      ObjectEntriesAsync,
+      ErrorMessage<StrictObjectIssue> | undefined
+    >;
 
 /**
- * Converts union to tuple types.
+ * Force tuple type.
  */
-type UnionToTuple<T> = UnionToIntersection<
-  T extends never ? never : () => T
-> extends () => infer W
-  ? [...UnionToTuple<Exclude<T, W>>, W]
-  : [];
+type ForceTuple<T> = T extends [string, ...string[]] ? T : [];
 
 /**
- * Returns a tuple or never type.
+ * Object keys type.
  */
-type TupleOrNever<T> = T extends [string, ...string[]] ? T : never;
+type ObjectKeys<TSchema extends Schema> = ForceTuple<
+  UnionToTuple<keyof TSchema['entries']>
+>;
 
 /**
- * Creates a enum schema of object keys.
+ * Creates a picklist schema of object keys.
  *
  * @param schema The object schema.
  *
- * @returns A enum schema.
+ * @returns A picklist schema.
+ */
+export function keyof<const TSchema extends Schema>(
+  schema: TSchema
+): PicklistSchema<ObjectKeys<TSchema>, undefined>;
+
+/**
+ * Creates a picklist schema of object keys.
+ *
+ * @param schema The object schema.
+ * @param message The error message.
+ *
+ * @returns A picklist schema.
  */
 export function keyof<
-  TSchema extends ObjectSchema<any, any> | ObjectSchemaAsync<any, any>
+  const TSchema extends Schema,
+  const TMessage extends ErrorMessage<PicklistIssue> | undefined,
 >(
-  schema: TSchema
-): EnumSchema<TupleOrNever<UnionToTuple<keyof TSchema['object']['entries']>>> {
-  return enumType(
-    Object.keys(schema.object.entries) as TupleOrNever<
-      UnionToTuple<keyof TSchema['object']['entries']>
-    >
-  );
+  schema: TSchema,
+  message: TMessage
+): PicklistSchema<ObjectKeys<TSchema>, TMessage>;
+
+// @__NO_SIDE_EFFECTS__
+export function keyof(
+  schema: Schema,
+  message?: ErrorMessage<PicklistIssue>
+): PicklistSchema<ObjectKeys<Schema>, ErrorMessage<PicklistIssue> | undefined> {
+  return picklist(Object.keys(schema.entries) as ObjectKeys<Schema>, message);
 }

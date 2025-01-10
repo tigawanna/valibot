@@ -1,54 +1,94 @@
-import type { BaseSchema, ErrorMessage } from '../../types.ts';
-import { getSchemaIssues, getOutput } from '../../utils/index.ts';
+import type {
+  BaseIssue,
+  BaseSchema,
+  ErrorMessage,
+  OutputDataset,
+} from '../../types/index.ts';
+import { _addIssue, _getStandardProps } from '../../utils/index.ts';
+
+/**
+ * Symbol issue type.
+ */
+export interface SymbolIssue extends BaseIssue<unknown> {
+  /**
+   * The issue kind.
+   */
+  readonly kind: 'schema';
+  /**
+   * The issue type.
+   */
+  readonly type: 'symbol';
+  /**
+   * The expected property.
+   */
+  readonly expected: 'symbol';
+}
 
 /**
  * Symbol schema type.
  */
-export type SymbolSchema<TOutput = symbol> = BaseSchema<symbol, TOutput> & {
-  schema: 'symbol';
-};
+export interface SymbolSchema<
+  TMessage extends ErrorMessage<SymbolIssue> | undefined,
+> extends BaseSchema<symbol, symbol, SymbolIssue> {
+  /**
+   * The schema type.
+   */
+  readonly type: 'symbol';
+  /**
+   * The schema reference.
+   */
+  readonly reference: typeof symbol;
+  /**
+   * The expected property.
+   */
+  readonly expects: 'symbol';
+  /**
+   * The error message.
+   */
+  readonly message: TMessage;
+}
 
 /**
  * Creates a symbol schema.
  *
- * @param error The error message.
+ * @returns A symbol schema.
+ */
+export function symbol(): SymbolSchema<undefined>;
+
+/**
+ * Creates a symbol schema.
+ *
+ * @param message The error message.
  *
  * @returns A symbol schema.
  */
-export function symbol(error?: ErrorMessage): SymbolSchema {
+export function symbol<
+  const TMessage extends ErrorMessage<SymbolIssue> | undefined,
+>(message: TMessage): SymbolSchema<TMessage>;
+
+// @__NO_SIDE_EFFECTS__
+export function symbol(
+  message?: ErrorMessage<SymbolIssue>
+): SymbolSchema<ErrorMessage<SymbolIssue> | undefined> {
   return {
-    /**
-     * The schema type.
-     */
-    schema: 'symbol',
-
-    /**
-     * Whether it's async.
-     */
+    kind: 'schema',
+    type: 'symbol',
+    reference: symbol,
+    expects: 'symbol',
     async: false,
-
-    /**
-     * Parses unknown input based on its schema.
-     *
-     * @param input The input to be parsed.
-     * @param info The parse info.
-     *
-     * @returns The parsed output.
-     */
-    _parse(input, info) {
-      // Check type of input
-      if (typeof input !== 'symbol') {
-        return getSchemaIssues(
-          info,
-          'type',
-          'symbol',
-          error || 'Invalid type',
-          input
-        );
+    message,
+    get '~standard'() {
+      return _getStandardProps(this);
+    },
+    '~run'(dataset, config) {
+      if (typeof dataset.value === 'symbol') {
+        // @ts-expect-error
+        dataset.typed = true;
+      } else {
+        _addIssue(this, 'type', dataset, config);
       }
-
-      // Return input as output
-      return getOutput(input);
+      // @ts-expect-error
+      return dataset as OutputDataset<symbol, SymbolIssue>;
     },
   };
 }

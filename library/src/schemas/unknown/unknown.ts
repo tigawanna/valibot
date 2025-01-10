@@ -1,42 +1,45 @@
-import type { BaseSchema, Pipe } from '../../types.ts';
-import { executePipe } from '../../utils/index.ts';
+import type { BaseSchema, SuccessDataset } from '../../types/index.ts';
+import { _getStandardProps } from '../../utils/index.ts';
 
 /**
  * Unknown schema type.
  */
-export type UnknownSchema<TOutput = unknown> = BaseSchema<unknown, TOutput> & {
-  schema: 'unknown';
-};
+export interface UnknownSchema extends BaseSchema<unknown, unknown, never> {
+  /**
+   * The schema type.
+   */
+  readonly type: 'unknown';
+  /**
+   * The schema reference.
+   */
+  readonly reference: typeof unknown;
+  /**
+   * The expected property.
+   */
+  readonly expects: 'unknown';
+}
 
 /**
  * Creates a unknown schema.
  *
- * @param pipe A validation and transformation pipe.
- *
  * @returns A unknown schema.
  */
-export function unknown(pipe: Pipe<unknown> = []): UnknownSchema {
+// @__NO_SIDE_EFFECTS__
+export function unknown(): UnknownSchema {
   return {
-    /**
-     * The schema type.
-     */
-    schema: 'unknown',
-
-    /**
-     * Whether it's async.
-     */
+    kind: 'schema',
+    type: 'unknown',
+    reference: unknown,
+    expects: 'unknown',
     async: false,
-
-    /**
-     * Parses unknown input based on its schema.
-     *
-     * @param input The input to be parsed.
-     * @param info The parse info.
-     *
-     * @returns The parsed output.
-     */
-    _parse(input, info) {
-      return executePipe(input, pipe, info, 'unknown');
+    get '~standard'() {
+      return _getStandardProps(this);
+    },
+    '~run'(dataset) {
+      // @ts-expect-error
+      dataset.typed = true;
+      // @ts-expect-error
+      return dataset as SuccessDataset<unknown>;
     },
   };
 }

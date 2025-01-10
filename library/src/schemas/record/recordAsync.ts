@@ -1,260 +1,254 @@
 import type {
+  BaseIssue,
   BaseSchema,
   BaseSchemaAsync,
   ErrorMessage,
-  Issues,
-  PipeAsync,
-} from '../../types.ts';
+  InferIssue,
+  ObjectPathItem,
+  OutputDataset,
+} from '../../types/index.ts';
 import {
-  executePipeAsync,
-  getIssues,
-  getSchemaIssues,
+  _addIssue,
+  _getStandardProps,
+  _isValidObjectKey,
 } from '../../utils/index.ts';
-import type { EnumSchema, EnumSchemaAsync } from '../enumType/index.ts';
 import type {
-  NativeEnumSchema,
-  NativeEnumSchemaAsync,
-} from '../nativeEnum/index.ts';
-import type { StringSchema, StringSchemaAsync } from '../string/index.ts';
-import type { UnionSchema, UnionSchemaAsync } from '../union/index.ts';
-import type { RecordInput, RecordOutput, RecordPathItem } from './types.ts';
-import { getRecordArgs } from './utils/index.ts';
-import { BLOCKED_KEYS } from './values.ts';
-
-/**
- * Record key type.
- */
-export type RecordKeyAsync =
-  | EnumSchema<any, string | number | symbol>
-  | EnumSchemaAsync<any, string | number | symbol>
-  | NativeEnumSchema<any, string | number | symbol>
-  | NativeEnumSchemaAsync<any, string | number | symbol>
-  | StringSchema<string | number | symbol>
-  | StringSchemaAsync<string | number | symbol>
-  | UnionSchema<any, string | number | symbol>
-  | UnionSchemaAsync<any, string | number | symbol>;
+  InferRecordInput,
+  InferRecordOutput,
+  RecordIssue,
+} from './types.ts';
 
 /**
  * Record schema async type.
  */
-export type RecordSchemaAsync<
-  TRecordKey extends RecordKeyAsync,
-  TRecordValue extends BaseSchema | BaseSchemaAsync,
-  TOutput = RecordOutput<TRecordKey, TRecordValue>
-> = BaseSchemaAsync<RecordInput<TRecordKey, TRecordValue>, TOutput> & {
-  schema: 'record';
-  record: { key: TRecordKey; value: TRecordValue };
-};
+export interface RecordSchemaAsync<
+  TKey extends
+    | BaseSchema<string, string | number | symbol, BaseIssue<unknown>>
+    | BaseSchemaAsync<string, string | number | symbol, BaseIssue<unknown>>,
+  TValue extends
+    | BaseSchema<unknown, unknown, BaseIssue<unknown>>
+    | BaseSchemaAsync<unknown, unknown, BaseIssue<unknown>>,
+  TMessage extends ErrorMessage<RecordIssue> | undefined,
+> extends BaseSchemaAsync<
+    InferRecordInput<TKey, TValue>,
+    InferRecordOutput<TKey, TValue>,
+    RecordIssue | InferIssue<TKey> | InferIssue<TValue>
+  > {
+  /**
+   * The schema type.
+   */
+  readonly type: 'record';
+  /**
+   * The schema reference.
+   */
+  readonly reference: typeof recordAsync;
+  /**
+   * The expected property.
+   */
+  readonly expects: 'Object';
+  /**
+   * The record key schema.
+   */
+  readonly key: TKey;
+  /**
+   * The record value schema.
+   */
+  readonly value: TValue;
+  /**
+   * The error message.
+   */
+  readonly message: TMessage;
+}
 
 /**
- * Creates an async record schema.
- *
- * @param value The value schema.
- * @param pipe A validation and transformation pipe.
- *
- * @returns An async record schema.
- */
-export function recordAsync<TRecordValue extends BaseSchema | BaseSchemaAsync>(
-  value: TRecordValue,
-  pipe?: PipeAsync<RecordOutput<StringSchema, TRecordValue>>
-): RecordSchemaAsync<StringSchema, TRecordValue>;
-
-/**
- * Creates an async record schema.
- *
- * @param value The value schema.
- * @param error The error message.
- * @param pipe A validation and transformation pipe.
- *
- * @returns An async record schema.
- */
-export function recordAsync<TRecordValue extends BaseSchema | BaseSchemaAsync>(
-  value: TRecordValue,
-  error?: ErrorMessage,
-  pipe?: PipeAsync<RecordOutput<StringSchema, TRecordValue>>
-): RecordSchemaAsync<StringSchema, TRecordValue>;
-
-/**
- * Creates an async record schema.
+ * Creates a record schema.
  *
  * @param key The key schema.
  * @param value The value schema.
- * @param pipe A validation and transformation pipe.
  *
- * @returns An async record schema.
+ * @returns A record schema.
  */
 export function recordAsync<
-  TRecordKey extends RecordKeyAsync,
-  TRecordValue extends BaseSchema | BaseSchemaAsync
->(
-  key: TRecordKey,
-  value: TRecordValue,
-  pipe?: PipeAsync<RecordOutput<TRecordKey, TRecordValue>>
-): RecordSchemaAsync<TRecordKey, TRecordValue>;
+  const TKey extends
+    | BaseSchema<string, string | number | symbol, BaseIssue<unknown>>
+    | BaseSchemaAsync<string, string | number | symbol, BaseIssue<unknown>>,
+  const TValue extends
+    | BaseSchema<unknown, unknown, BaseIssue<unknown>>
+    | BaseSchemaAsync<unknown, unknown, BaseIssue<unknown>>,
+>(key: TKey, value: TValue): RecordSchemaAsync<TKey, TValue, undefined>;
 
 /**
- * Creates an async record schema.
+ * Creates a record schema.
  *
  * @param key The key schema.
  * @param value The value schema.
- * @param error The error message.
- * @param pipe A validation and transformation pipe.
+ * @param message The error message.
  *
- * @returns An async record schema.
+ * @returns A record schema.
  */
 export function recordAsync<
-  TRecordKey extends RecordKeyAsync,
-  TRecordValue extends BaseSchema | BaseSchemaAsync
+  const TKey extends
+    | BaseSchema<string, string | number | symbol, BaseIssue<unknown>>
+    | BaseSchemaAsync<string, string | number | symbol, BaseIssue<unknown>>,
+  const TValue extends
+    | BaseSchema<unknown, unknown, BaseIssue<unknown>>
+    | BaseSchemaAsync<unknown, unknown, BaseIssue<unknown>>,
+  const TMessage extends ErrorMessage<RecordIssue> | undefined,
 >(
-  key: TRecordKey,
-  value: TRecordValue,
-  error?: ErrorMessage,
-  pipe?: PipeAsync<RecordOutput<TRecordKey, TRecordValue>>
-): RecordSchemaAsync<TRecordKey, TRecordValue>;
+  key: TKey,
+  value: TValue,
+  message: TMessage
+): RecordSchemaAsync<TKey, TValue, TMessage>;
 
-export function recordAsync<
-  TRecordKey extends RecordKeyAsync,
-  TRecordValue extends BaseSchema | BaseSchemaAsync
->(
-  arg1: TRecordValue | TRecordKey,
-  arg2?:
-    | PipeAsync<RecordOutput<TRecordKey, TRecordValue>>
-    | ErrorMessage
-    | TRecordValue,
-  arg3?: PipeAsync<RecordOutput<TRecordKey, TRecordValue>> | ErrorMessage,
-  arg4?: PipeAsync<RecordOutput<TRecordKey, TRecordValue>>
-): RecordSchemaAsync<TRecordKey, TRecordValue> {
-  // Get key, value, error and pipe argument
-  const [key, value, error, pipe] = getRecordArgs<
-    TRecordKey,
-    TRecordValue,
-    PipeAsync<RecordOutput<TRecordKey, TRecordValue>>
-  >(arg1, arg2, arg3, arg4);
-
-  // Create and return async record schema
+// @__NO_SIDE_EFFECTS__
+export function recordAsync(
+  key:
+    | BaseSchema<string, string | number | symbol, BaseIssue<unknown>>
+    | BaseSchemaAsync<string, string | number | symbol, BaseIssue<unknown>>,
+  value:
+    | BaseSchema<unknown, unknown, BaseIssue<unknown>>
+    | BaseSchemaAsync<unknown, unknown, BaseIssue<unknown>>,
+  message?: ErrorMessage<RecordIssue>
+): RecordSchemaAsync<
+  | BaseSchema<string, string | number | symbol, BaseIssue<unknown>>
+  | BaseSchemaAsync<string, string | number | symbol, BaseIssue<unknown>>,
+  | BaseSchema<unknown, unknown, BaseIssue<unknown>>
+  | BaseSchemaAsync<unknown, unknown, BaseIssue<unknown>>,
+  ErrorMessage<RecordIssue> | undefined
+> {
   return {
-    /**
-     * The schema type.
-     */
-    schema: 'record',
-
-    /**
-     * The record key and value schema.
-     */
-    record: { key, value },
-
-    /**
-     * Whether it's async.
-     */
+    kind: 'schema',
+    type: 'record',
+    reference: recordAsync,
+    expects: 'Object',
     async: true,
+    key,
+    value,
+    message,
+    get '~standard'() {
+      return _getStandardProps(this);
+    },
+    async '~run'(dataset, config) {
+      // Get input value from dataset
+      const input = dataset.value;
 
-    /**
-     * Parses unknown input based on its schema.
-     *
-     * @param input The input to be parsed.
-     * @param info The parse info.
-     *
-     * @returns The parsed output.
-     */
-    async _parse(input, info) {
-      // Check type of input
-      if (!input || typeof input !== 'object') {
-        return getSchemaIssues(
-          info,
-          'type',
-          'record',
-          error || 'Invalid type',
-          input
+      // If root type is valid, check nested types
+      if (input && typeof input === 'object') {
+        // Set typed to `true` and value to empty object
+        // @ts-expect-error
+        dataset.typed = true;
+        dataset.value = {};
+
+        // Parse schema of each record entry
+        // Hint: `Object.entries(…)` always returns keys as strings
+        // Hint: We exclude specific keys for security reasons
+        const datasets = await Promise.all(
+          Object.entries(input)
+            .filter(([key]) => _isValidObjectKey(input, key))
+            .map(([entryKey, entryValue]) =>
+              Promise.all([
+                entryKey,
+                entryValue,
+                this.key['~run']({ value: entryKey }, config),
+                this.value['~run']({ value: entryValue }, config),
+              ])
+            )
         );
-      }
 
-      // Create issues and output
-      let issues: Issues | undefined;
-      const output: Record<string | number | symbol, any> = {};
+        // Process datasets of each record entry
+        for (const [
+          entryKey,
+          entryValue,
+          keyDataset,
+          valueDataset,
+        ] of datasets) {
+          // If there are issues, capture them
+          if (keyDataset.issues) {
+            // Create record path item
+            const pathItem: ObjectPathItem = {
+              type: 'object',
+              origin: 'key',
+              input: input as Record<string, unknown>,
+              key: entryKey,
+              value: entryValue,
+            };
 
-      // Parse each key and value by schema
-      await Promise.all(
-        // Note: `Object.entries(...)` converts each key to a string
-        Object.entries(input).map(async ([inputKey, inputValue]) => {
-          // Exclude blocked keys to prevent prototype pollutions
-          if (!BLOCKED_KEYS.includes(inputKey)) {
-            // Create path item variable
-            let pathItem: RecordPathItem | undefined;
+            // Add modified item dataset issues to issues
+            for (const issue of keyDataset.issues) {
+              // @ts-expect-error
+              issue.path = [pathItem];
+              // @ts-expect-error
+              dataset.issues?.push(issue);
+            }
+            if (!dataset.issues) {
+              // @ts-expect-error
+              dataset.issues = keyDataset.issues;
+            }
 
-            // Get parse result of key and value
-            const [keyResult, valueResult] = await Promise.all(
-              (
-                [
-                  { schema: key, value: inputKey, origin: 'key' },
-                  { schema: value, value: inputValue, origin: 'value' },
-                ] as const
-              ).map(async ({ schema, value, origin }) => {
-                // If not aborted early, continue execution
-                if (!(info?.abortEarly && issues)) {
-                  // Get parse result of value
-                  const result = await schema._parse(value, {
-                    origin,
-                    abortEarly: info?.abortEarly,
-                    abortPipeEarly: info?.abortPipeEarly,
-                    skipPipe: info?.skipPipe,
-                  });
-
-                  // If not aborted early, continue execution
-                  if (!(info?.abortEarly && issues)) {
-                    // If there are issues, capture them
-                    if (result.issues) {
-                      // Create record path item
-                      pathItem = pathItem || {
-                        schema: 'record',
-                        input,
-                        key: inputKey,
-                        value: inputValue,
-                      };
-
-                      // Add modified result issues to issues
-                      for (const issue of result.issues) {
-                        if (issue.path) {
-                          issue.path.unshift(pathItem);
-                        } else {
-                          issue.path = [pathItem];
-                        }
-                        issues?.push(issue);
-                      }
-                      if (!issues) {
-                        issues = result.issues;
-                      }
-
-                      // If necessary, abort early
-                      if (info?.abortEarly) {
-                        throw null;
-                      }
-
-                      // Otherwise, return parse result
-                    } else {
-                      return result;
-                    }
-                  }
-                }
-              })
-            ).catch(() => []);
-
-            // Set entry if there are no issues
-            if (keyResult && valueResult) {
-              output[keyResult.output] = valueResult.output;
+            // If necessary, abort early
+            if (config.abortEarly) {
+              dataset.typed = false;
+              break;
             }
           }
-        })
-      );
 
-      // Return issues or pipe result
-      return issues
-        ? getIssues(issues)
-        : executePipeAsync(
-            output as RecordOutput<TRecordKey, TRecordValue>,
-            pipe,
-            info,
-            'record'
-          );
+          // If there are issues, capture them
+          if (valueDataset.issues) {
+            // Create record path item
+            const pathItem: ObjectPathItem = {
+              type: 'object',
+              origin: 'value',
+              input: input as Record<string, unknown>,
+              key: entryKey,
+              value: entryValue,
+            };
+
+            // Add modified item dataset issues to issues
+            for (const issue of valueDataset.issues) {
+              if (issue.path) {
+                issue.path.unshift(pathItem);
+              } else {
+                // @ts-expect-error
+                issue.path = [pathItem];
+              }
+              // @ts-expect-error
+              dataset.issues?.push(issue);
+            }
+            if (!dataset.issues) {
+              // @ts-expect-error
+              dataset.issues = valueDataset.issues;
+            }
+
+            // If necessary, abort early
+            if (config.abortEarly) {
+              dataset.typed = false;
+              break;
+            }
+          }
+
+          // If not typed, set typed to `false`
+          if (!keyDataset.typed || !valueDataset.typed) {
+            dataset.typed = false;
+          }
+
+          // If key is typed, add entry to dataset
+          if (keyDataset.typed) {
+            // @ts-expect-error
+            dataset.value[keyDataset.value] = valueDataset.value;
+          }
+        }
+
+        // Otherwise, add record issue
+      } else {
+        _addIssue(this, 'type', dataset, config);
+      }
+
+      // Return output dataset
+      // @ts-expect-error
+      return dataset as OutputDataset<
+        Record<string | number | symbol, unknown>,
+        RecordIssue | BaseIssue<unknown>
+      >;
     },
   };
 }

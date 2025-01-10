@@ -1,42 +1,108 @@
-import type { BaseSchema, BaseSchemaAsync, Output } from '../../types.ts';
-import { getOutput } from '../../utils/index.ts';
-import type { FallbackInfo } from './types.ts';
+import type {
+  BaseIssue,
+  BaseSchema,
+  BaseSchemaAsync,
+  Config,
+  InferInput,
+  InferIssue,
+  InferOutput,
+  MaybePromise,
+  OutputDataset,
+  StandardProps,
+  UnknownDataset,
+} from '../../types/index.ts';
+import { _getStandardProps } from '../../utils/index.ts';
+import { getFallback } from '../getFallback/index.ts';
 
 /**
- * Returns a fallback value when validating the passed schema failed.
+ * Fallback async type.
+ */
+export type FallbackAsync<
+  TSchema extends
+    | BaseSchema<unknown, unknown, BaseIssue<unknown>>
+    | BaseSchemaAsync<unknown, unknown, BaseIssue<unknown>>,
+> =
+  | InferOutput<TSchema>
+  | ((
+      dataset?: OutputDataset<InferOutput<TSchema>, InferIssue<TSchema>>,
+      config?: Config<InferIssue<TSchema>>
+    ) => MaybePromise<InferOutput<TSchema>>);
+
+/**
+ * Schema with fallback async type.
+ */
+export type SchemaWithFallbackAsync<
+  TSchema extends
+    | BaseSchema<unknown, unknown, BaseIssue<unknown>>
+    | BaseSchemaAsync<unknown, unknown, BaseIssue<unknown>>,
+  TFallback extends FallbackAsync<TSchema>,
+> = Omit<TSchema, 'async' | '~standard' | '~run'> & {
+  /**
+   * The fallback value.
+   */
+  readonly fallback: TFallback;
+  /**
+   * Whether it's async.
+   */
+  readonly async: true;
+  /**
+   * The Standard Schema properties.
+   *
+   * @internal
+   */
+  readonly '~standard': StandardProps<
+    InferInput<TSchema>,
+    InferOutput<TSchema>
+  >;
+  /**
+   * Parses unknown input values.
+   *
+   * @param dataset The input dataset.
+   * @param config The configuration.
+   *
+   * @returns The output dataset.
+   *
+   * @internal
+   */
+  readonly '~run': (
+    dataset: UnknownDataset,
+    config: Config<BaseIssue<unknown>>
+  ) => Promise<OutputDataset<InferOutput<TSchema>, InferIssue<TSchema>>>;
+};
+
+/**
+ * Returns a fallback value as output if the input does not match the schema.
  *
  * @param schema The schema to catch.
- * @param value The fallback value.
+ * @param fallback The fallback value.
  *
  * @returns The passed schema.
  */
-export function fallbackAsync<TSchema extends BaseSchema | BaseSchemaAsync>(
+// @__NO_SIDE_EFFECTS__
+export function fallbackAsync<
+  const TSchema extends
+    | BaseSchema<unknown, unknown, BaseIssue<unknown>>
+    | BaseSchemaAsync<unknown, unknown, BaseIssue<unknown>>,
+  const TFallback extends FallbackAsync<TSchema>,
+>(
   schema: TSchema,
-  value: Output<TSchema> | ((info: FallbackInfo) => Output<TSchema>)
-): TSchema {
+  fallback: TFallback
+): SchemaWithFallbackAsync<TSchema, TFallback> {
   return {
     ...schema,
-
-    /**
-     * Parses unknown input based on its schema.
-     *
-     * @param input The input to be parsed.
-     * @param info The parse info.
-     *
-     * @returns The parsed output.
-     */
-    async _parse(input, info) {
-      const result = await schema._parse(input, info);
-      return getOutput(
-        result.issues
-          ? typeof value === 'function'
-            ? (value as (info: FallbackInfo) => Output<TSchema>)({
-                input,
-                issues: result.issues,
-              })
-            : value
-          : result.output
-      );
+    fallback,
+    async: true,
+    get '~standard'() {
+      return _getStandardProps(this);
+    },
+    async '~run'(dataset, config) {
+      const outputDataset = await schema['~run'](dataset, config);
+      return outputDataset.issues
+        ? {
+            typed: true,
+            value: await getFallback(this, outputDataset, config),
+          }
+        : outputDataset;
     },
   };
 }

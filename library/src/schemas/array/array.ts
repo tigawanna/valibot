@@ -1,150 +1,163 @@
 import type {
+  ArrayPathItem,
+  BaseIssue,
   BaseSchema,
   ErrorMessage,
-  Input,
-  Issues,
-  Output,
-  Pipe,
-} from '../../types.ts';
-import {
-  executePipe,
-  getDefaultArgs,
-  getIssues,
-  getSchemaIssues,
-} from '../../utils/index.ts';
-import type { ArrayPathItem } from './types.ts';
+  InferInput,
+  InferIssue,
+  InferOutput,
+  OutputDataset,
+} from '../../types/index.ts';
+import { _addIssue, _getStandardProps } from '../../utils/index.ts';
+import type { ArrayIssue } from './types.ts';
 
 /**
  * Array schema type.
  */
-export type ArraySchema<
-  TArrayItem extends BaseSchema,
-  TOutput = Output<TArrayItem>[]
-> = BaseSchema<Input<TArrayItem>[], TOutput> & {
-  schema: 'array';
-  array: { item: TArrayItem };
-};
+export interface ArraySchema<
+  TItem extends BaseSchema<unknown, unknown, BaseIssue<unknown>>,
+  TMessage extends ErrorMessage<ArrayIssue> | undefined,
+> extends BaseSchema<
+    InferInput<TItem>[],
+    InferOutput<TItem>[],
+    ArrayIssue | InferIssue<TItem>
+  > {
+  /**
+   * The schema type.
+   */
+  readonly type: 'array';
+  /**
+   * The schema reference.
+   */
+  readonly reference: typeof array;
+  /**
+   * The expected property.
+   */
+  readonly expects: 'Array';
+  /**
+   * The array item schema.
+   */
+  readonly item: TItem;
+  /**
+   * The error message.
+   */
+  readonly message: TMessage;
+}
 
 /**
- * Creates a array schema.
+ * Creates an array schema.
  *
  * @param item The item schema.
- * @param pipe A validation and transformation pipe.
  *
- * @returns A array schema.
+ * @returns An array schema.
  */
-export function array<TArrayItem extends BaseSchema>(
-  item: TArrayItem,
-  pipe?: Pipe<Output<TArrayItem>[]>
-): ArraySchema<TArrayItem>;
+export function array<
+  const TItem extends BaseSchema<unknown, unknown, BaseIssue<unknown>>,
+>(item: TItem): ArraySchema<TItem, undefined>;
 
 /**
- * Creates a array schema.
+ * Creates an array schema.
  *
  * @param item The item schema.
- * @param error The error message.
- * @param pipe A validation and transformation pipe.
+ * @param message The error message.
  *
- * @returns A array schema.
+ * @returns An array schema.
  */
-export function array<TArrayItem extends BaseSchema>(
-  item: TArrayItem,
-  error?: ErrorMessage,
-  pipe?: Pipe<Output<TArrayItem>[]>
-): ArraySchema<TArrayItem>;
+export function array<
+  const TItem extends BaseSchema<unknown, unknown, BaseIssue<unknown>>,
+  const TMessage extends ErrorMessage<ArrayIssue> | undefined,
+>(item: TItem, message: TMessage): ArraySchema<TItem, TMessage>;
 
-export function array<TArrayItem extends BaseSchema>(
-  item: TArrayItem,
-  arg2?: ErrorMessage | Pipe<Output<TArrayItem>[]>,
-  arg3?: Pipe<Output<TArrayItem>[]>
-): ArraySchema<TArrayItem> {
-  // Get error and pipe argument
-  const [error, pipe] = getDefaultArgs(arg2, arg3);
-
-  // Create and return array schema
+// @__NO_SIDE_EFFECTS__
+export function array(
+  item: BaseSchema<unknown, unknown, BaseIssue<unknown>>,
+  message?: ErrorMessage<ArrayIssue>
+): ArraySchema<
+  BaseSchema<unknown, unknown, BaseIssue<unknown>>,
+  ErrorMessage<ArrayIssue> | undefined
+> {
   return {
-    /**
-     * The schema type.
-     */
-    schema: 'array',
-
-    /**
-     * The array item schema.
-     */
-    array: { item },
-
-    /**
-     * Whether it's async.
-     */
+    kind: 'schema',
+    type: 'array',
+    reference: array,
+    expects: 'Array',
     async: false,
+    item,
+    message,
+    get '~standard'() {
+      return _getStandardProps(this);
+    },
+    '~run'(dataset, config) {
+      // Get input value from dataset
+      const input = dataset.value;
 
-    /**
-     * Parses unknown input based on its schema.
-     *
-     * @param input The input to be parsed.
-     * @param info The parse info.
-     *
-     * @returns The parsed output.
-     */
-    _parse(input, info) {
-      // Check type of input
-      if (!Array.isArray(input)) {
-        return getSchemaIssues(
-          info,
-          'type',
-          'array',
-          error || 'Invalid type',
-          input
-        );
-      }
+      // If root type is valid, check nested types
+      if (Array.isArray(input)) {
+        // Set typed to `true` and value to empty array
+        // @ts-expect-error
+        dataset.typed = true;
+        dataset.value = [];
 
-      // Create issues and output
-      let issues: Issues | undefined;
-      const output: any[] = [];
+        // Parse schema of each array item
+        for (let key = 0; key < input.length; key++) {
+          const value = input[key];
+          const itemDataset = this.item['~run']({ value }, config);
 
-      // Parse schema of each array item
-      for (let key = 0; key < input.length; key++) {
-        const value = input[key];
-        const result = item._parse(value, info);
+          // If there are issues, capture them
+          if (itemDataset.issues) {
+            // Create array path item
+            const pathItem: ArrayPathItem = {
+              type: 'array',
+              origin: 'value',
+              input,
+              key,
+              value,
+            };
 
-        // If there are issues, capture them
-        if (result.issues) {
-          // Create array path item
-          const pathItem: ArrayPathItem = {
-            schema: 'array',
-            input,
-            key,
-            value,
-          };
-
-          // Add modified result issues to issues
-          for (const issue of result.issues) {
-            if (issue.path) {
-              issue.path.unshift(pathItem);
-            } else {
-              issue.path = [pathItem];
+            // Add modified item dataset issues to issues
+            for (const issue of itemDataset.issues) {
+              if (issue.path) {
+                issue.path.unshift(pathItem);
+              } else {
+                // @ts-expect-error
+                issue.path = [pathItem];
+              }
+              // @ts-expect-error
+              dataset.issues?.push(issue);
             }
-            issues?.push(issue);
-          }
-          if (!issues) {
-            issues = result.issues;
+            if (!dataset.issues) {
+              // @ts-expect-error
+              dataset.issues = itemDataset.issues;
+            }
+
+            // If necessary, abort early
+            if (config.abortEarly) {
+              dataset.typed = false;
+              break;
+            }
           }
 
-          // If necessary, abort early
-          if (info?.abortEarly) {
-            break;
+          // If not typed, set typed to `false`
+          if (!itemDataset.typed) {
+            dataset.typed = false;
           }
 
-          // Otherwise, add item to array
-        } else {
-          output.push(result.output);
+          // Add item to dataset
+          // @ts-expect-error
+          dataset.value.push(itemDataset.value);
         }
+
+        // Otherwise, add array issue
+      } else {
+        _addIssue(this, 'type', dataset, config);
       }
 
-      // Return issues or pipe result
-      return issues
-        ? getIssues(issues)
-        : executePipe(output as Output<TArrayItem>[], pipe, info, 'array');
+      // Return output dataset
+      // @ts-expect-error
+      return dataset as OutputDataset<
+        unknown[],
+        ArrayIssue | BaseIssue<unknown>
+      >;
     },
   };
 }

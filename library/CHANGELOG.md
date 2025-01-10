@@ -2,17 +2,266 @@
 
 All notable changes to the library will be documented in this file.
 
-## vX.X.X (Month DD, YYYY)
+## v1.0.0 (Month DD, YYYY)
+
+- Add `assert` method to assert values (issue #862)
+- Add `checkItemsAsync` action (pull request #856)
+- Add `graphemes`, `maxGraphemes`, `minGraphemes` and `notGraphemes` action (pull request #853)
+- Add `words`, `maxWords`, `minWords` and `notWords` action
+- Add `args` and `returns` action to transform functions (issue #243)
+- Add `rfcEmail` action to validate RFC 5322 email addresses (pull request #912)
+- Add new overload signature to `pipe` and `pipeAync` method to support unlimited pipe items of same input and output type (issue #852)
+- Add `@__NO_SIDE_EFFECTS__` notation to improve tree shaking (pull request #995)
+- Change types and implementation to support Standard Schema
+- Change behaviour of `minValue` and `maxValue` for `NaN` (pull request #843)
+- Change type and behaviour of `nullable`, `nullableAsync`, `nullish`, `nullishAsync`, `optional`, `optionalAsync`, `undefinedable` and `undefinedableAsync` for undefined default value (issue #878)
+- Change type signature of `partialCheck` and `partialCheckAsync` action to add `.pathList` property in a type-safe way
+- Change type signature of `findItem` action to support type predicates (issue #867)
+- Refactor `bytes`, `maxBytes`, `minBytes` and `notBytes` action
+- Fix implementation of `nonOptional`, `nonOptionalAsync`, `nonNullable`, `nonNullableAsync`, `nonNullish` and `nonNullishAsync` schema in edge cases (issue #909)
+- Fix instantiation error for `any` in `PathKeys` type (issue #929)
+- Fix TypeScript error of `keyof` method for objects with many keys (pull request #988)
+- Fix options filtering in `enum_` schema (pull request #941)
+
+## v0.42.1 (September 20, 2024)
+
+- Fix function type declaration of `_run` property
+
+## v0.42.0 (September 15, 2024)
+
+- Add `metadata` action to add custom metadata to a schema
+- Add `title` metadata action to add a title to a schema (discussion #826)
+- Add `decimal` action to validate integer and float strings (pull request #823)
+- Rename `decimal` action to `digits` (pull request #823)
+- Rename `NoPipe` type to `SchemaWithoutPipe`
+- Fix inference of generics in `IssueDotPath` type (issue #814)
+
+## v0.41.0 (September 01, 2024)
+
+- Change `reference` property of all action base types to be less strict (issue #799)
+- Change implementation of `variant` and `variantAsync` to improve performance and issues generation for nested variants with different discriminators (pull request #809)
+
+## v0.40.0 (August 29, 2024)
+
+- Add `nanoid` action to validate Nano IDs (pull request #789)
+- Add `undefinedable` and `undefinedableAsync` schema (issue #385)
+- Fix invalid output type for transformed optional object entries (issue #806)
+
+## v0.39.0 (August 24, 2024)
+
+- Add support for `exactOptionalPropertyTypes` config (issue #385)
+- Fix `IssueDotPath` type for `pipe` and `pipeAsync` method (issue #793)
+- Fix `IssueDotPath` type for `variant` and `variantAsync` schema (issue #700)
+
+## v0.38.0 (August 20, 2024)
+
+- Change `expects` and `expected` property by enclosing combined values in parentheses
+- Change question mark handling for `optional`, `optionalAsync`, `nullish` and `nullishAsync` schemas in objects
+- Fix TypeScript errors in `TuplePath` and `QuestionMarkSchema` type (issue #659, #776)
+- Fix missing TypeScript errors in `pipe` and `pipeAsync` method (pull request #785)
+
+## v0.37.0 (July 30, 2024)
+
+- Add `base64` action to validate Base64 strings (pull request #644)
+- Add `description` metadata action (pull request #747)
+- Add metadata feature to `pipe` and `pipeAsync` method (pull request #747)
+- Refactor `HEXADECIMAL_REGEX` (pull request #666)
+- Change `unknown[]` in `LengthInput` type to `ArrayLike<unknown>`
+- Change `ArrayInput` and `ContentInput` type to use `MaybeReadonly`
+- Change `EMOJI_REGEX` to be more accurate and strict (pull request #666)
+- Fix bug in `fallback` and `fallbackAsync` method for specific schemas (pull request #752)
+- Fix bug in `fallbackAsync` method for async schemas (pull request #732)
+
+## v0.36.0 (July 05, 2024)
+
+- Add `normalize` action to normalize strings (issue #691)
+- Add support for async schemas to `entriesFromList` util
+- Add support for numbers and symbols to `entriesFromList` util (issue #492)
+- Add `key` property to `SetPathItem` type to improve DX (issue #693, #694)
+- Remove `FunctionReference` type and refactor code
+
+## v0.35.0 (June 25, 2024)
+
+- Increase argument limit of `pipe` and `pipeAsync` method (issue #643)
+
+## v0.34.0 (June 24, 2024)
+
+- Add `file`, `function` and `promise` schema
+- Add `awaitAsync` action to await promise in pipeline
+- Add `operation` property to `filterItems`, `findItem`, `mapItems`, `reduceItems` and `sortItem` action
+- Rename `action` argument of `filterItems`, `findItem`, `mapItems`, `reduceItems` and `sortItem` action to `operation`
+- Rename `action` argument and property of `transform` and `transformAsync` action to `operation`
+- Change and improve implementation of `_stringify` util
+
+## v0.33.3 (June 19, 2024)
+
+- Fix `_isPartiallyTyped` util of `partialCheck` and `partialCheckAsync` action
+
+## v0.33.2 (June 19, 2024)
+
+- Fix type exports for JSR and Deno (pull request #663)
+
+## v0.33.1 (June 18, 2024)
+
+- Fix types of `partialCheck` and `partialCheckAsync` action
+
+## v0.33.0 (June 18, 2024)
+
+- Add export alias with reserved keywords for functions with underscore suffix
+- Add `partialCheck` and `partialCheckAsync` action (issue #76, #145, #260)
+- Add `checkItems`, `filterItems`, `findItem`, `mapItems`, `reduceItems` and `sortItem` action (issue #595)
+- Rename `every` and `some` action to `everyItem` and `someItem`
+- Rename `_isAllowedObjectKey` to `_isValidObjectKey` and add check for inherited properties
+- Remove `RecordPathItem` and `TuplePathItem` type and refactor code
+- Fix `received` property of issue in `date` schema for invalid dates (issue #654)
+
+## v0.32.0 (June 14, 2024)
+
+- Add `rawCheck`, `rawCheckAsync`, `rawTransform` and `rawTransformAsync` action (issue #597)
+- Change `FlatErrors` type for better developer experience (discussion #640)
+- Change `pipe` and `pipeAsync` method to mark output as untyped only when necessary (discussion #613)
+- Remove unused `skipPipe` option from `Config` type and refactor library
+- Fix `this` reference in `looseTuple`, `looseTupleAsync`, `strictTuple`, `strictTupleAsync`, `tuple`, `tupleAsync`, `tupleWithRest` and `tupleWithRestAsync` schema (pull request #649)
+- Fix type of `options` key in `EnumSchema` interface
+
+## v0.31.1 (June 08, 2024)
+
+- Fix missing file extension for Deno (pull request #637)
+
+## v0.31.0 (June 06, 2024)
+
+> To migrate from an older version, please see the official [migration guide](https://valibot.dev/guides/migrate-to-v0.31.0/) and our [announcement post](https://valibot.dev/blog/valibot-v0.31.0-is-finally-available/).
+
+## v0.30.0 (March 06, 2024)
+
+- Add `Default` and `DefaultAsync` type and refactor codebase
+- Add `Fallback` and `FallbackAsync` type and refactor codebase
+- Add `isOfType` type guard util to check the type of an object
+- Refactor `getDefaults` and `getDefaultsAsync` method (pull request #259)
+- Refactor `getFallbacks` and `getFallbacksAsync` method (pull request #259)
+- Change type definitions from `type` to `interface` (pull request #259, #451)
+- Remove deprecated properties of `safeParse` and `safeParseAsync` method
+- Remove any deprecated method, schema and validation functions
+- Fix `NestedPath` type of `flatten` for async schemas (issue #456)
+- Fix implementation of `DefaultValue` type for transformed values
+
+## v0.29.0 (February 19, 2024)
+
+- Add `every` and `some` pipeline validation action
+- Add `input` of schema to `getter` function of `recursive` and `recursiveAsync` schema (pull request #441)
+- Change implementation of `transform` and `transformAsync` method to only run transformations if there are no issues (issue #436)
+- Rename `recursive` and `recursiveAsync` schema to `lazy` and `lazyAsync` (issue #440)
+- Fix bug in `i18n` util when using `setSchemaMessage`
+
+## v0.28.1 (February 06, 2024)
+
+- Fix bug in `union` and `unionAsync` schema for transformed inputs (issue #420)
+
+## v0.28.0 (February 05, 2024)
+
+> Note: The library has been revised and refactored. Therefore, not every change is listed in detail.
+
+- Add i18n feature, global configurations and improve error messages (pull request #397)
+- Add `number` and `bigint` to `PicklistOptions` type (issue #378)
+- Fix missing export of `forwardAsync` method (issue #412)
+
+## v0.27.1 (January 28, 2024)
+
+- Fix missing file extension for Deno (pull request #387)
+
+## v0.27.0 (January 24, 2024)
+
+- Remove `NonNullable`, `NonNullish` and `NonOptional` type
+- Add `NonNullableInput`, `NonNullableOutput`, `NonNullishInput`, `NonNullishOutput`, `NonOptionalInput` and `NonOptionalOutput` type
+- Improve type signature of `omit`, `omitAsync`, `pick` and `pickAsync` schema to also allow read-only object keys (issue #380)
+- Fix type of `pipe` argument at `intersect` and `intersectAsync` schema
+
+## v0.26.0 (January 16, 2024)
+
+- Improve performance of `enum_` and `enumAsync` schema by caching values
+- Change ISO timestamp regex to support timestamps with lower and higher millisecond accuracy (pull request #353)
+- Change issue handling of `union`, `unionAsync`, `variant` and `variantAsync` schema to improve developer experience
+- Fix bug in `getDefaults`, `getDefaultsAsync`, `getFallbacks` and `getFallbacksAsync` schema for falsy but not `undefined` values (issue #356)
+- Fix type of `pipe` argument at `union`, `unionAsync`, `variant` and `variantAsync` schema
+- Fix bug that broke pipeline execution in `union`, `unionAsync`, `variant` and `variantAsync` schema (issue #364)
+- Fix typo in type name of `startsWith` validation action (pull request #375)
+
+## v0.25.0 (December 26, 2023)
+
+- Add `creditCard`, `decimal`, `hash`, `hexadecimal`, `hexColor` and `octal` pipeline validation action (pull request #292, #304, #307, #308, #309)
+- Add `pipe` parameter to `intersect`, `intersectAsync`, `union`, `unionAsync`, `variant` and `variantAsync` schema (discussion #297)
+- Add support for multiple variant options with same discriminator key to `variant` and `variantAsync` schema (issue #310)
+- Add path to issues if discriminator key of `variant` and `variantAsync` schema is missing (issue #235, #303)
+- Change `PicklistOptions` type and generics of `picklist` and `picklistAsync` schema
+
+## v0.24.1 (December 11, 2023)
+
+- Fix output type of optional `object` and `objectAsync` entries with default value (issue #286)
+- Fix output type of `nullable`, `nullableAsync`, `nullish`, `nullishAsync`, `optional` and `optionalAsync` schema with default value (issue #286)
+
+## v0.24.0 (December 10, 2023)
+
+- Add support for `special` schema as key of `record` schema (issue #291)
+- Add support for `special` and `specialAsync` schema as key of `recordAsync` schema (issue #291)
+- Fix input and output type of optional `object` and `objectAsync` entries with default value (issue #286)
+
+## v0.23.0 (December 08, 2023)
+
+- Add `bic` validation function (pull request #284)
+- Add `mac`, `mac48` and `mac64` validation function (pull request #270)
+- Change `PicklistOptions`, `UnionOptions` and `UnionOptionsAsync` type from tuple to array (issue #279)
+- Change `IntersectOptions`, `IntersectOptionsAsync`, `UnionOptions` and `UnionOptionsAsync` type to support readonly values (issue #279)
+- Fix optional keys of `ObjectInput` and `ObjectOutput` type (issue #242)
+
+## v0.22.0 (December 03, 2023)
+
+- Add support for boolean to `notValue` validation (pull request #261)
+- Add `.typed` to schema validation result and execute pipeline of complex schemas if output is typed (issue #76, #145)
+- Add `forward` method that forwards issues of pipelines to nested fields (issue #76, #145)
+- Add `skipPipe` option to `is` type guard method (pull request #166)
+- Change return type of `safeParse` and `safeParseAsync` method
+- Rename and change util functions and refactor codebase
+- Fix `RecordInput` and `RecordOuput` type when using `unionAsync` as key
+- Fix output type for `nullable`, `nullableAsync`, `nullish`, `nullishAsync`, `optional` and `optionalAsync` when using a default value (issue #271)
+
+## v0.21.0 (November 19, 2023)
+
+- Change structure of schemas, validations and transformations to make properties accessible (pull request #211)
+- Fix errors in JSDoc comments and add JSDoc ESLint plugin (pull request #205)
+- Fix missing file extension for Deno (pull request #249)
+
+## v0.20.1 (November 2, 2023)
+
+- Remove `never` from type signatur of strict objects and tuples (issue #234)
+
+## v0.20.0 (October 31, 2023)
+
+> Note: The library has been revised and refactored. There is a migration guide in the [release notes](https://github.com/fabian-hiller/valibot/releases/tag/v0.20.0).
 
 - Add `getRestAndDefaultArgs` utility function
-- Add new `rest` argument to `object` and `objectAsync` schema
+- Add `rest` argument to `object` and `objectAsync` schema
+- Add `variant` and `variantAsync` schema (issue #90, #216)
+- Add `getFallback` property to schema in `fallback` method (pull request #177)
 - Add `PartialObjectEntries` and `PartialObjectEntriesAsync` type (issue #217)
 - Add export for any validation regex (pull request #219)
+- Add `getDefaultAsync`, `getDefaults` and `getDefaultsAsync`, `getFallback`, `getFallbackAsync`, `getFallbacks`, `getFallbacksAsync` method (issue #155)
+- Add support for schema validation to `transform` and `transformAsync`
 - Fix type check in `date` and `dateAsync` for invalid dates (pull request #214)
 - Improve security of regular expressions (pull request #202)
+- Improve `optional`, `optionalAsync`, `nullable`, `nullableAsync`, `nullish` and `nullishAsync` schema
 - Change `ObjectSchema` and `ObjectSchemaAsync` type
 - Change type check in `tuple` and `tupleAsync` to be less strict
 - Change return type of `action` argument in `coerce` and `coerceAsync` to `unknown`
+- Change type of `brand`, `getDefault`, `transform` and `transformAsync` method
+- Change type of `array`, `arrayAsync`, `intersection`, `intersectionAsync`, `map`, `mapAsync`, `object`, `objectAsync`, `union`, `unionAsync`, `record`, `recordAsync`, `set`, `setAsync`, `tuple` and `tupleAsync` schema
+- Rename `schema` property of every schema type to `type`
+- Rename `intersection` and `intersectionAsync` schema to `intersect` and `intersectAsync`
+- Rename `enumType` and `enumTypeAsync` schema to `picklist` and `picklistAsync`
+- Rename `nativeEnum` and `nativeEnumAsync` schema to `enum_` and `enumAsync`
+- Rename `nullType` and `nullTypeAsync` schema to `null_` and `nullAsync`
+- Rename `undefinedType` and `undefinedTypeAsync` schema to `undefined_` and `undefinedAsync`
+- Rename `voidType` and `voidTypeAsync` schema to `void_` and `voidAsync`
+- Rename `default` property of `optional`, `optionalAsync`, `nullable`, `nullableAsync`, `nullish` and `nullishAsync` schema to `getDefault`
 - Rename `ObjectShape` and `ObjectShapeAsync` types to `ObjectEntries` and `ObjectEntriesAsync`
 - Rename `TupleShape` and `TupleShapeAsync` types to `TupleItems` and `TupleItemsAsync`
 - Deprecate `passthrough`, `strict` and `strip` method in favor of `object` schema with `rest` argument

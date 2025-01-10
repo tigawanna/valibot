@@ -1,42 +1,50 @@
-import type { BaseSchema, Pipe } from '../../types.ts';
-import { executePipe } from '../../utils/index.ts';
+/* eslint-disable @typescript-eslint/no-explicit-any */
+import type { BaseSchema, SuccessDataset } from '../../types/index.ts';
+import { _getStandardProps } from '../../utils/index.ts';
 
 /**
  * Any schema type.
  */
-export type AnySchema<TOutput = any> = BaseSchema<any, TOutput> & {
-  schema: 'any';
-};
+export interface AnySchema extends BaseSchema<any, any, never> {
+  /**
+   * The schema type.
+   */
+  readonly type: 'any';
+  /**
+   * The schema reference.
+   */
+  readonly reference: typeof any;
+  /**
+   * The expected property.
+   */
+  readonly expects: 'any';
+}
 
 /**
- * Creates a any schema.
+ * Creates an any schema.
  *
- * @param pipe A validation and transformation pipe.
+ * Hint: This schema function exists only for completeness and is not
+ * recommended in practice. Instead, `unknown` should be used to accept
+ * unknown data.
  *
- * @returns A any schema.
+ * @returns An any schema.
  */
-export function any(pipe: Pipe<any> = []): AnySchema {
+// @__NO_SIDE_EFFECTS__
+export function any(): AnySchema {
   return {
-    /**
-     * The schema type.
-     */
-    schema: 'any',
-
-    /**
-     * Whether it's async.
-     */
+    kind: 'schema',
+    type: 'any',
+    reference: any,
+    expects: 'any',
     async: false,
-
-    /**
-     * Parses unknown input based on its schema.
-     *
-     * @param input The input to be parsed.
-     * @param info The parse info.
-     *
-     * @returns The parsed output.
-     */
-    _parse(input, info) {
-      return executePipe(input, pipe, info, 'any');
+    get '~standard'() {
+      return _getStandardProps(this);
+    },
+    '~run'(dataset) {
+      // @ts-expect-error
+      dataset.typed = true;
+      // @ts-expect-error
+      return dataset as SuccessDataset<any>;
     },
   };
 }

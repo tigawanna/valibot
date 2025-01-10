@@ -1,150 +1,388 @@
 import { describe, expect, test } from 'vitest';
-import { type ValiError } from '../../error/index.ts';
-import { parse } from '../../methods/index.ts';
-import { maxSize, minSize, size } from '../../validations/index.ts';
-import { date } from '../date/index.ts';
-import { map } from '../map/index.ts';
+import type { FailureDataset, InferIssue } from '../../types/index.ts';
+import { expectNoSchemaIssue, expectSchemaIssue } from '../../vitest/index.ts';
 import { number } from '../number/index.ts';
-import { object } from '../object/index.ts';
-import { string } from '../string/index.ts';
+import { string, type StringIssue } from '../string/index.ts';
+import { map, type MapSchema } from './map.ts';
+import type { MapIssue } from './types.ts';
 
 describe('map', () => {
-  test('should pass only maps', () => {
-    const schema1 = map(string(), date());
-    const input1 = new Map().set('1', new Date());
-    const output1 = parse(schema1, input1);
-    expect(output1).toEqual(input1);
+  describe('should return schema object', () => {
+    const key = number();
+    type Key = typeof key;
+    const value = string();
+    type Value = typeof value;
+    const baseSchema: Omit<MapSchema<Key, Value, never>, 'message'> = {
+      kind: 'schema',
+      type: 'map',
+      reference: map,
+      expects: 'Map',
+      key,
+      value,
+      async: false,
+      '~standard': {
+        version: 1,
+        vendor: 'valibot',
+        validate: expect.any(Function),
+      },
+      '~run': expect.any(Function),
+    };
 
-    const schema2 = map(number(), string());
-    const input2 = new Map().set(1, '1').set(2, '2');
-    const output2 = parse(schema2, input2);
-    expect(output2).toEqual(input2);
-    const input3 = new Map();
-    const output3 = parse(schema2, input3);
-    expect(output3).toEqual(input3);
+    test('with undefined message', () => {
+      const schema: MapSchema<Key, Value, undefined> = {
+        ...baseSchema,
+        message: undefined,
+      };
+      expect(map(key, value)).toStrictEqual(schema);
+      expect(map(key, value, undefined)).toStrictEqual(schema);
+    });
 
-    expect(() => parse(schema1, new Map().set('1', '1'))).toThrowError();
-    expect(() => parse(schema1, new Map().set(1, '1'))).toThrowError();
-    expect(() => parse(schema1, 123)).toThrowError();
-    expect(() => parse(schema1, 'test')).toThrowError();
-    expect(() => parse(schema1, {})).toThrowError();
+    test('with string message', () => {
+      expect(map(key, value, 'message')).toStrictEqual({
+        ...baseSchema,
+        message: 'message',
+      } satisfies MapSchema<Key, Value, 'message'>);
+    });
+
+    test('with function message', () => {
+      const message = () => 'message';
+      expect(map(key, value, message)).toStrictEqual({
+        ...baseSchema,
+        message,
+      } satisfies MapSchema<Key, Value, typeof message>);
+    });
   });
 
-  test('should throw custom error', () => {
-    const error = 'Value is not an map!';
-    const schema = map(number(), string(), error);
-    expect(() => parse(schema, new Set())).toThrowError(error);
-  });
-
-  test('should throw every issue', () => {
+  describe('should return dataset without issues', () => {
     const schema = map(number(), string());
-    const input = new Map().set(1, 1).set(2, '2').set('3', '3');
-    expect(() => parse(schema, input)).toThrowError();
-    try {
-      parse(schema, input);
-    } catch (error) {
-      expect((error as ValiError).issues.length).toBe(2);
-    }
+
+    test('for empty map', () => {
+      expectNoSchemaIssue(schema, [new Map()]);
+    });
+
+    test('for simple map', () => {
+      expectNoSchemaIssue(schema, [
+        new Map([
+          [0, 'foo'],
+          [1, 'bar'],
+          [2, 'baz'],
+        ]),
+      ]);
+    });
   });
 
-  test('should throw only first issue', () => {
+  describe('should return dataset with issues', () => {
+    const schema = map(number(), string(), 'message');
+    const baseIssue: Omit<MapIssue, 'input' | 'received'> = {
+      kind: 'schema',
+      type: 'map',
+      expected: 'Map',
+      message: 'message',
+    };
+
+    // Primitive types
+
+    test('for bigints', () => {
+      expectSchemaIssue(schema, baseIssue, [-1n, 0n, 123n]);
+    });
+
+    test('for booleans', () => {
+      expectSchemaIssue(schema, baseIssue, [true, false]);
+    });
+
+    test('for null', () => {
+      expectSchemaIssue(schema, baseIssue, [null]);
+    });
+
+    test('for numbers', () => {
+      expectSchemaIssue(schema, baseIssue, [-1, 0, 123, 45.67]);
+    });
+
+    test('for undefined', () => {
+      expectSchemaIssue(schema, baseIssue, [undefined]);
+    });
+
+    test('for strings', () => {
+      expectSchemaIssue(schema, baseIssue, ['', 'abc', '123']);
+    });
+
+    test('for symbols', () => {
+      expectSchemaIssue(schema, baseIssue, [Symbol(), Symbol('foo')]);
+    });
+
+    // Complex types
+
+    test('for arrays', () => {
+      expectSchemaIssue(schema, baseIssue, [[], ['value']]);
+    });
+
+    test('for functions', () => {
+      // eslint-disable-next-line @typescript-eslint/no-empty-function
+      expectSchemaIssue(schema, baseIssue, [() => {}, function () {}]);
+    });
+
+    test('for objects', () => {
+      expectSchemaIssue(schema, baseIssue, [{}, { key: 'value' }]);
+    });
+  });
+
+  describe('should return dataset without nested issues', () => {
     const schema = map(number(), string());
-    const info = { abortEarly: true };
-    const input1 = new Map().set(1, 1).set(2, '2').set('3', '3');
-    expect(() => parse(schema, input1, info)).toThrowError();
-    try {
-      parse(schema, input1, info);
-    } catch (error) {
-      expect((error as ValiError).issues.length).toBe(1);
-      expect((error as ValiError).issues[0].origin).toBe('value');
-    }
 
-    const input2 = new Map().set('1', 1).set(2, '2').set('3', '3');
-    expect(() => parse(schema, input2, info)).toThrowError();
-    try {
-      parse(schema, input2, info);
-    } catch (error) {
-      expect((error as ValiError).issues.length).toBe(1);
-      expect((error as ValiError).issues[0].origin).toBe('key');
-    }
+    test('for simple map', () => {
+      expectNoSchemaIssue(schema, [
+        new Map([
+          [0, 'foo'],
+          [1, 'bar'],
+          [2, 'baz'],
+        ]),
+      ]);
+    });
+
+    test('for nested map', () => {
+      expectNoSchemaIssue(map(schema, schema), [
+        new Map([
+          [
+            new Map([
+              [0, 'foo'],
+              [1, 'bar'],
+            ]),
+            new Map([[3, 'baz']]),
+          ],
+        ]),
+      ]);
+    });
   });
 
-  test('should return issue path', () => {
-    const schema1 = map(string(), number());
-    const input1 = new Map().set('A', 1).set('B', 2).set('C', '3');
-    const result1 = schema1._parse(input1);
-    expect(result1.issues?.[0].path).toEqual([
-      {
-        schema: 'map',
-        input: input1,
-        key: 'C',
-        value: input1.get('C'),
-      },
+  describe('should return dataset with nested issues', () => {
+    const schema = map(number(), string());
+
+    const baseInfo = {
+      message: expect.any(String),
+      requirement: undefined,
+      issues: undefined,
+      lang: undefined,
+      abortEarly: undefined,
+      abortPipeEarly: undefined,
+    };
+
+    const input = new Map<unknown, unknown>([
+      [0, 'foo'],
+      [1, 123], // Invalid value
+      [2, 'baz'],
+      [null, 'bar'], // Invalid key
+      [4, null], // Invalid value
     ]);
 
-    const schema2 = map(string(), object({ key: string() }));
-    const input2 = new Map()
-      .set('A', { key: '1' })
-      .set('B', { key: 2 })
-      .set('C', { key: '3' });
-    const result2 = schema2._parse(input2);
-    expect(result2.issues?.[0].origin).toBe('value');
-    expect(result2.issues?.[0].path).toEqual([
-      {
-        schema: 'map',
-        input: input2,
-        key: 'B',
-        value: input2.get('B'),
-      },
-      {
-        schema: 'object',
-        input: input2.get('B'),
-        key: 'key',
-        value: input2.get('B').key,
-      },
-    ]);
+    const stringIssue: StringIssue = {
+      ...baseInfo,
+      kind: 'schema',
+      type: 'string',
+      input: 123,
+      expected: 'string',
+      received: '123',
+      path: [
+        {
+          type: 'map',
+          origin: 'value',
+          input,
+          key: 1,
+          value: 123,
+        },
+      ],
+    };
 
-    const schema3 = map(object({ key: string() }), string());
-    const errorKey = { key: 2 };
-    const input3 = new Map()
-      .set({ key: '1' }, 'A')
-      .set(errorKey, 'B')
-      .set({ key: '3' }, 'C');
-    const result3 = schema3._parse(input3);
-    expect(result3.issues?.[0].origin).toBe('key');
-    expect(result3.issues?.[0].path).toEqual([
-      {
-        schema: 'map',
-        input: input3,
-        key: errorKey,
-        value: input3.get(errorKey),
-      },
-      {
-        schema: 'object',
-        input: errorKey,
-        key: 'key',
-        value: errorKey.key,
-      },
-    ]);
-  });
+    test('for invalid values', () => {
+      expect(schema['~run']({ value: input }, {})).toStrictEqual({
+        typed: false,
+        value: input,
+        issues: [
+          stringIssue,
+          {
+            ...baseInfo,
+            kind: 'schema',
+            type: 'number',
+            input: null,
+            expected: 'number',
+            received: 'null',
+            path: [
+              {
+                type: 'map',
+                origin: 'key',
+                input,
+                key: null,
+                value: 'bar',
+              },
+            ],
+          },
+          {
+            ...baseInfo,
+            kind: 'schema',
+            type: 'string',
+            input: null,
+            expected: 'string',
+            received: 'null',
+            path: [
+              {
+                type: 'map',
+                origin: 'value',
+                input,
+                key: 4,
+                value: null,
+              },
+            ],
+          },
+        ],
+      } satisfies FailureDataset<InferIssue<typeof schema>>);
+    });
 
-  test('should execute pipe', () => {
-    const sizeError = 'Invalid size';
+    test('with abort early for invalid key', () => {
+      const input = new Map<unknown, unknown>([
+        [0, 'foo'],
+        ['1', 'bar'], // Invalid key
+        [2, 'baz'],
+        [3, 123], // Invalid value
+      ]);
+      expect(
+        schema['~run']({ value: input }, { abortEarly: true })
+      ).toStrictEqual({
+        typed: false,
+        value: new Map([[0, 'foo']]),
+        issues: [
+          {
+            ...baseInfo,
+            kind: 'schema',
+            type: 'number',
+            input: '1',
+            expected: 'number',
+            received: '"1"',
+            path: [
+              {
+                type: 'map',
+                origin: 'key',
+                input,
+                key: '1',
+                value: 'bar',
+              },
+            ],
+            abortEarly: true,
+          },
+        ],
+      } satisfies FailureDataset<InferIssue<typeof schema>>);
+    });
 
-    const schema1 = map(number(), string(), [size(1)]);
-    const input1 = new Map().set(1, '1');
-    const output1 = parse(schema1, input1);
-    expect(output1).toEqual(input1);
-    expect(() => parse(schema1, new Map())).toThrowError(sizeError);
-    expect(() => parse(schema1, input1.set(2, '2'))).toThrowError(sizeError);
+    test('with abort early for invalid value', () => {
+      expect(
+        schema['~run']({ value: input }, { abortEarly: true })
+      ).toStrictEqual({
+        typed: false,
+        value: new Map([[0, 'foo']]),
+        issues: [{ ...stringIssue, abortEarly: true }],
+      } satisfies FailureDataset<InferIssue<typeof schema>>);
+    });
 
-    const schema2 = map(number(), string(), 'Error', [minSize(2), maxSize(4)]);
-    const input2 = new Map().set(1, '1').set(2, '2').set(3, '3');
-    const output2 = parse(schema2, input2);
-    expect(output2).toEqual(input2);
-    expect(() => parse(schema2, input2.set(4, '4').set(5, '5'))).toThrowError(
-      sizeError
-    );
-    expect(() => parse(schema2, new Map().set(1, '1'))).toThrowError(sizeError);
+    test('for invalid nested values', () => {
+      const nestedSchema = map(schema, schema);
+      const input = new Map<unknown, unknown>([
+        [
+          new Map<unknown, unknown>([
+            [0, 123],
+            [1, 'foo'],
+          ]),
+          new Map(),
+        ],
+        [new Map(), 'bar'],
+        [
+          new Map(),
+          new Map<unknown, unknown>([
+            [0, 'foo'],
+            ['1', 'bar'],
+          ]),
+        ],
+      ]);
+      expect(nestedSchema['~run']({ value: input }, {})).toStrictEqual({
+        typed: false,
+        value: input,
+        issues: [
+          {
+            ...baseInfo,
+            kind: 'schema',
+            type: 'string',
+            input: 123,
+            expected: 'string',
+            received: '123',
+            path: [
+              {
+                type: 'map',
+                origin: 'key',
+                input,
+                key: new Map<unknown, unknown>([
+                  [0, 123],
+                  [1, 'foo'],
+                ]),
+                value: new Map(),
+              },
+              {
+                type: 'map',
+                origin: 'value',
+                input: new Map<unknown, unknown>([
+                  [0, 123],
+                  [1, 'foo'],
+                ]),
+                key: 0,
+                value: 123,
+              },
+            ],
+          },
+          {
+            ...baseInfo,
+            kind: 'schema',
+            type: 'map',
+            input: 'bar',
+            expected: 'Map',
+            received: '"bar"',
+            path: [
+              {
+                type: 'map',
+                origin: 'value',
+                input,
+                key: new Map(),
+                value: 'bar',
+              },
+            ],
+          },
+          {
+            ...baseInfo,
+            kind: 'schema',
+            type: 'number',
+            input: '1',
+            expected: 'number',
+            received: '"1"',
+            path: [
+              {
+                type: 'map',
+                origin: 'value',
+                input,
+                key: new Map(),
+                value: new Map<unknown, unknown>([
+                  [0, 'foo'],
+                  ['1', 'bar'],
+                ]),
+              },
+              {
+                type: 'map',
+                origin: 'key',
+                input: new Map<unknown, unknown>([
+                  [0, 'foo'],
+                  ['1', 'bar'],
+                ]),
+                key: '1',
+                value: 'bar',
+              },
+            ],
+          },
+        ],
+      } satisfies FailureDataset<InferIssue<typeof nestedSchema>>);
+    });
   });
 });

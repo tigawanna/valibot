@@ -1,41 +1,123 @@
 import { describe, expect, test } from 'vitest';
-import { parseAsync } from '../../methods/index.ts';
-import { nullType } from '../nullType/index.ts';
-import { nullable } from '../nullable/index.ts';
-import { number } from '../number/index.ts';
-import { any } from '../any/index.ts';
-import { stringAsync } from '../string/index.ts';
-import { unionAsync } from '../union/index.ts';
-import { undefinedType } from '../undefinedType/index.ts';
-import { nonNullableAsync } from './nonNullableAsync.ts';
+import { transform } from '../../actions/index.ts';
+import { pipeAsync } from '../../methods/index.ts';
+import type { FailureDataset } from '../../types/index.ts';
+import {
+  expectNoSchemaIssueAsync,
+  expectSchemaIssueAsync,
+} from '../../vitest/index.ts';
+import { nullishAsync, type NullishSchemaAsync } from '../nullish/index.ts';
+import { string, type StringSchema } from '../string/index.ts';
+import {
+  nonNullableAsync,
+  type NonNullableSchemaAsync,
+} from './nonNullableAsync.ts';
+import type { NonNullableIssue } from './types.ts';
 
 describe('nonNullableAsync', () => {
-  test('should not pass null', async () => {
-    const schema1 = nonNullableAsync(
-      unionAsync([stringAsync(), nullType(), undefinedType()])
-    );
-    const input1 = 'test';
-    const output1 = await parseAsync(schema1, input1);
-    expect(output1).toBe(input1);
-    expect(await parseAsync(schema1, undefined)).toBeUndefined();
-    await expect(parseAsync(schema1, null)).rejects.toThrowError();
-    await expect(parseAsync(schema1, 123)).rejects.toThrowError();
-    await expect(parseAsync(schema1, {})).rejects.toThrowError();
+  describe('should return schema object', () => {
+    const wrapped = nullishAsync(string());
+    const baseSchema: Omit<
+      NonNullableSchemaAsync<
+        NullishSchemaAsync<StringSchema<undefined>, undefined>,
+        never
+      >,
+      'message'
+    > = {
+      kind: 'schema',
+      type: 'non_nullable',
+      reference: nonNullableAsync,
+      expects: '!null',
+      wrapped,
+      async: true,
+      '~standard': {
+        version: 1,
+        vendor: 'valibot',
+        validate: expect.any(Function),
+      },
+      '~run': expect.any(Function),
+    };
 
-    const schema2 = nonNullableAsync(nullable(number()));
-    const input2 = 123;
-    const output2 = await parseAsync(schema2, input2);
-    expect(output2).toBe(input2);
-    await expect(parseAsync(schema2, null)).rejects.toThrowError();
-    await expect(parseAsync(schema2, undefined)).rejects.toThrowError();
-    await expect(parseAsync(schema2, 'test')).rejects.toThrowError();
-    await expect(parseAsync(schema2, {})).rejects.toThrowError();
+    test('with undefined message', () => {
+      const schema: NonNullableSchemaAsync<
+        NullishSchemaAsync<StringSchema<undefined>, undefined>,
+        undefined
+      > = {
+        ...baseSchema,
+        message: undefined,
+      };
+      expect(nonNullableAsync(wrapped)).toStrictEqual(schema);
+      expect(nonNullableAsync(wrapped, undefined)).toStrictEqual(schema);
+    });
+
+    test('with string message', () => {
+      expect(nonNullableAsync(wrapped, 'message')).toStrictEqual({
+        ...baseSchema,
+        message: 'message',
+      } satisfies NonNullableSchemaAsync<
+        NullishSchemaAsync<StringSchema<undefined>, undefined>,
+        'message'
+      >);
+    });
+
+    test('with function message', () => {
+      const message = () => 'message';
+      expect(nonNullableAsync(wrapped, message)).toStrictEqual({
+        ...baseSchema,
+        message,
+      } satisfies NonNullableSchemaAsync<
+        NullishSchemaAsync<StringSchema<undefined>, undefined>,
+        typeof message
+      >);
+    });
   });
 
-  test('should throw custom error', async () => {
-    const error = 'Value is not non null!';
-    await expect(
-      parseAsync(nonNullableAsync(any(), error), null)
-    ).rejects.toThrowError(error);
+  describe('should return dataset without issues', () => {
+    const schema = nonNullableAsync(nullishAsync(string()));
+
+    test('for valid wrapped types', async () => {
+      await expectNoSchemaIssueAsync(schema, ['', 'foo', '#$%', undefined]);
+    });
+  });
+
+  describe('should return dataset with issues', () => {
+    const nonNullableIssue: NonNullableIssue = {
+      kind: 'schema',
+      type: 'non_nullable',
+      input: null,
+      received: 'null',
+      expected: '!null',
+      message: 'message',
+      requirement: undefined,
+      path: undefined,
+      issues: undefined,
+      lang: undefined,
+      abortEarly: undefined,
+      abortPipeEarly: undefined,
+    };
+
+    test('for null input', async () => {
+      await expectSchemaIssueAsync(
+        nonNullableAsync(nullishAsync(string()), 'message'),
+        nonNullableIssue,
+        [null]
+      );
+    });
+
+    test('for null output', async () => {
+      expect(
+        await nonNullableAsync(
+          pipeAsync(
+            string(),
+            transform(() => null)
+          ),
+          'message'
+        )['~run']({ value: 'foo' }, {})
+      ).toStrictEqual({
+        typed: false,
+        value: null,
+        issues: [nonNullableIssue],
+      } satisfies FailureDataset<NonNullableIssue>);
+    });
   });
 });
