@@ -1,37 +1,135 @@
 import { describe, expect, test } from 'vitest';
-import { parse } from '../../methods/index.ts';
-import { union } from '../union/index.ts';
-import { string } from '../string/index.ts';
-import { nullType } from '../nullType/index.ts';
-import { number } from '../number/index.ts';
-import { any } from '../any/index.ts';
-import { undefinedType } from '../undefinedType/index.ts';
-import { nullish } from '../nullish/index.ts';
-import { nonNullish } from './nonNullish.ts';
+import { transform } from '../../actions/index.ts';
+import { pipe } from '../../methods/index.ts';
+import type { FailureDataset } from '../../types/index.ts';
+import { expectNoSchemaIssue, expectSchemaIssue } from '../../vitest/index.ts';
+import { nullish, type NullishSchema } from '../nullish/index.ts';
+import { string, type StringSchema } from '../string/index.ts';
+import { nonNullish, type NonNullishSchema } from './nonNullish.ts';
+import type { NonNullishIssue } from './types.ts';
 
 describe('nonNullish', () => {
-  test('should not pass null or undefined', () => {
-    const schema1 = nonNullish(union([string(), nullType(), undefinedType()]));
-    const input1 = 'test';
-    const output1 = parse(schema1, input1);
-    expect(output1).toBe(input1);
-    expect(() => parse(schema1, null)).toThrowError();
-    expect(() => parse(schema1, undefined)).toThrowError();
-    expect(() => parse(schema1, 123)).toThrowError();
-    expect(() => parse(schema1, {})).toThrowError();
+  describe('should return schema object', () => {
+    const wrapped = nullish(string());
+    const baseSchema: Omit<
+      NonNullishSchema<
+        NullishSchema<StringSchema<undefined>, undefined>,
+        never
+      >,
+      'message'
+    > = {
+      kind: 'schema',
+      type: 'non_nullish',
+      reference: nonNullish,
+      expects: '(!null & !undefined)',
+      wrapped,
+      async: false,
+      '~standard': {
+        version: 1,
+        vendor: 'valibot',
+        validate: expect.any(Function),
+      },
+      '~run': expect.any(Function),
+    };
 
-    const schema2 = nonNullish(nullish(number()));
-    const input2 = 123;
-    const output2 = parse(schema2, input2);
-    expect(output2).toBe(input2);
-    expect(() => parse(schema2, null)).toThrowError();
-    expect(() => parse(schema2, undefined)).toThrowError();
-    expect(() => parse(schema2, 'test')).toThrowError();
-    expect(() => parse(schema2, {})).toThrowError();
+    test('with undefined message', () => {
+      const schema: NonNullishSchema<
+        NullishSchema<StringSchema<undefined>, undefined>,
+        undefined
+      > = {
+        ...baseSchema,
+        message: undefined,
+      };
+      expect(nonNullish(wrapped)).toStrictEqual(schema);
+      expect(nonNullish(wrapped, undefined)).toStrictEqual(schema);
+    });
+
+    test('with string message', () => {
+      expect(nonNullish(wrapped, 'message')).toStrictEqual({
+        ...baseSchema,
+        message: 'message',
+      } satisfies NonNullishSchema<
+        NullishSchema<StringSchema<undefined>, undefined>,
+        'message'
+      >);
+    });
+
+    test('with function message', () => {
+      const message = () => 'message';
+      expect(nonNullish(wrapped, message)).toStrictEqual({
+        ...baseSchema,
+        message,
+      } satisfies NonNullishSchema<
+        NullishSchema<StringSchema<undefined>, undefined>,
+        typeof message
+      >);
+    });
   });
 
-  test('should throw custom error', () => {
-    const error = 'Value is not non nullish!';
-    expect(() => parse(nonNullish(any(), error), null)).toThrowError(error);
+  describe('should return dataset without issues', () => {
+    const schema = nonNullish(nullish(string()));
+
+    test('for valid wrapped types', () => {
+      expectNoSchemaIssue(schema, ['', 'foo', '#$%']);
+    });
+  });
+
+  describe('should return dataset with issues', () => {
+    const baseIssue: Omit<NonNullishIssue, 'input' | 'received'> = {
+      kind: 'schema',
+      type: 'non_nullish',
+      expected: '(!null & !undefined)',
+      message: 'message',
+      requirement: undefined,
+      path: undefined,
+      issues: undefined,
+      lang: undefined,
+      abortEarly: undefined,
+      abortPipeEarly: undefined,
+    };
+
+    test('for null input', () => {
+      expectSchemaIssue(nonNullish(nullish(string()), 'message'), baseIssue, [
+        null,
+      ]);
+    });
+
+    test('for undefined input', () => {
+      expectSchemaIssue(nonNullish(nullish(string()), 'message'), baseIssue, [
+        undefined,
+      ]);
+    });
+
+    test('for null output', () => {
+      expect(
+        nonNullish(
+          pipe(
+            string(),
+            transform(() => null)
+          ),
+          'message'
+        )['~run']({ value: 'foo' }, {})
+      ).toStrictEqual({
+        typed: false,
+        value: null,
+        issues: [{ ...baseIssue, input: null, received: 'null' }],
+      } satisfies FailureDataset<NonNullishIssue>);
+    });
+
+    test('for undefined output', () => {
+      expect(
+        nonNullish(
+          pipe(
+            string(),
+            transform(() => undefined)
+          ),
+          'message'
+        )['~run']({ value: 'foo' }, {})
+      ).toStrictEqual({
+        typed: false,
+        value: undefined,
+        issues: [{ ...baseIssue, input: undefined, received: 'undefined' }],
+      } satisfies FailureDataset<NonNullishIssue>);
+    });
   });
 });

@@ -1,151 +1,366 @@
 import {
+  type LooseObjectIssue,
+  type LooseObjectSchemaAsync,
   nonOptionalAsync,
+  type NonOptionalIssue,
   type NonOptionalSchemaAsync,
-  objectAsync,
-  type ObjectEntriesAsync,
-  type ObjectOutput,
-  type ObjectSchema,
+  type ObjectIssue,
   type ObjectSchemaAsync,
+  type ObjectWithRestIssue,
+  type ObjectWithRestSchemaAsync,
+  type StrictObjectIssue,
+  type StrictObjectSchemaAsync,
 } from '../../schemas/index.ts';
 import type {
+  BaseIssue,
   BaseSchema,
   BaseSchemaAsync,
+  Config,
   ErrorMessage,
-  PipeAsync,
-} from '../../types.ts';
-import { getRestAndDefaultArgs } from '../../utils/index.ts';
+  InferInput,
+  InferIssue,
+  InferObjectInput,
+  InferObjectOutput,
+  InferOutput,
+  ObjectEntriesAsync,
+  ObjectKeys,
+  OutputDataset,
+  SchemaWithoutPipe,
+  StandardProps,
+  UnknownDataset,
+} from '../../types/index.ts';
+import { _getStandardProps } from '../../utils/index.ts';
 
 /**
- * Required object schema type.
+ * Schema type.
  */
-type Required<TObjectEntries extends ObjectEntriesAsync> = {
-  [TKey in keyof TObjectEntries]: NonOptionalSchemaAsync<TObjectEntries[TKey]>;
+type Schema = SchemaWithoutPipe<
+  | LooseObjectSchemaAsync<
+      ObjectEntriesAsync,
+      ErrorMessage<LooseObjectIssue> | undefined
+    >
+  | ObjectSchemaAsync<ObjectEntriesAsync, ErrorMessage<ObjectIssue> | undefined>
+  | ObjectWithRestSchemaAsync<
+      ObjectEntriesAsync,
+      | BaseSchema<unknown, unknown, BaseIssue<unknown>>
+      | BaseSchemaAsync<unknown, unknown, BaseIssue<unknown>>,
+      ErrorMessage<ObjectWithRestIssue> | undefined
+    >
+  | StrictObjectSchemaAsync<
+      ObjectEntriesAsync,
+      ErrorMessage<StrictObjectIssue> | undefined
+    >
+>;
+
+/**
+ * Required entries type.
+ */
+type RequiredEntries<
+  TEntries extends ObjectEntriesAsync,
+  TKeys extends readonly (keyof TEntries)[] | undefined,
+  TMessage extends ErrorMessage<NonOptionalIssue> | undefined,
+> = {
+  [TKey in keyof TEntries]: TKeys extends readonly (keyof TEntries)[]
+    ? TKey extends TKeys[number]
+      ? NonOptionalSchemaAsync<TEntries[TKey], TMessage>
+      : TEntries[TKey]
+    : NonOptionalSchemaAsync<TEntries[TKey], TMessage>;
 };
 
 /**
- * Creates an async object schema consisting of all properties of an existing
- * object schema set to none optional.
- *
- * @param schema The affected schema.
- * @param pipe A validation and transformation pipe.
- *
- * @returns An async object schema.
+ * Schema with required type.
  */
-export function requiredAsync<
-  TObjectSchema extends ObjectSchema<any, any> | ObjectSchemaAsync<any, any>
->(
-  schema: TObjectSchema,
-  pipe?: PipeAsync<
-    ObjectOutput<Required<TObjectSchema['object']['entries']>, undefined>
-  >
-): ObjectSchemaAsync<Required<TObjectSchema['object']['entries']>>;
-
-/**
- * Creates an async object schema consisting of all properties of an existing
- * object schema set to none optional.
- *
- * @param schema The affected schema.
- * @param error The error message.
- * @param pipe A validation and transformation pipe.
- *
- * @returns An async object schema.
- */
-export function requiredAsync<
-  TObjectSchema extends ObjectSchema<any, any> | ObjectSchemaAsync<any, any>
->(
-  schema: TObjectSchema,
-  error?: ErrorMessage,
-  pipe?: PipeAsync<
-    ObjectOutput<Required<TObjectSchema['object']['entries']>, undefined>
-  >
-): ObjectSchemaAsync<Required<TObjectSchema['object']['entries']>>;
-
-/**
- * Creates an async object schema consisting of all properties of an existing
- * object schema set to none optional.
- *
- * @param schema The affected schema.
- * @param rest The object rest.
- * @param pipe A validation and transformation pipe.
- *
- * @returns An async object schema.
- */
-export function requiredAsync<
-  TObjectSchema extends ObjectSchema<any, any> | ObjectSchemaAsync<any, any>,
-  TObjectRest extends BaseSchema | BaseSchemaAsync | undefined
->(
-  schema: TObjectSchema,
-  rest: TObjectRest,
-  pipe?: PipeAsync<
-    ObjectOutput<Required<TObjectSchema['object']['entries']>, TObjectRest>
-  >
-): ObjectSchemaAsync<Required<TObjectSchema['object']['entries']>, TObjectRest>;
-
-/**
- * Creates an async object schema consisting of all properties of an existing
- * object schema set to none optional.
- *
- * @param schema The affected schema.
- * @param rest The object rest.
- * @param error The error message.
- * @param pipe A validation and transformation pipe.
- *
- * @returns An async object schema.
- */
-export function requiredAsync<
-  TObjectSchema extends ObjectSchema<any, any> | ObjectSchemaAsync<any, any>,
-  TObjectRest extends BaseSchema | BaseSchemaAsync | undefined
->(
-  schema: TObjectSchema,
-  rest: TObjectRest,
-  error?: ErrorMessage,
-  pipe?: PipeAsync<
-    ObjectOutput<Required<TObjectSchema['object']['entries']>, TObjectRest>
-  >
-): ObjectSchemaAsync<Required<TObjectSchema['object']['entries']>, TObjectRest>;
-
-export function requiredAsync<
-  TObjectSchema extends ObjectSchema<any, any> | ObjectSchemaAsync<any, any>,
-  TObjectRest extends BaseSchema | BaseSchemaAsync | undefined = undefined
->(
-  schema: TObjectSchema,
-  arg2?:
-    | PipeAsync<
-        ObjectOutput<Required<TObjectSchema['object']['entries']>, TObjectRest>
-      >
-    | ErrorMessage
-    | TObjectRest,
-  arg3?:
-    | PipeAsync<
-        ObjectOutput<Required<TObjectSchema['object']['entries']>, TObjectRest>
-      >
-    | ErrorMessage,
-  arg4?: PipeAsync<
-    ObjectOutput<Required<TObjectSchema['object']['entries']>, TObjectRest>
-  >
-): ObjectSchemaAsync<
-  Required<TObjectSchema['object']['entries']>,
-  TObjectRest
-> {
-  // Get rest, error and pipe argument
-  const [rest, error, pipe] = getRestAndDefaultArgs<
-    TObjectRest,
-    PipeAsync<
-      ObjectOutput<Required<TObjectSchema['object']['entries']>, TObjectRest>
+export type SchemaWithRequiredAsync<
+  TSchema extends Schema,
+  TKeys extends ObjectKeys<TSchema> | undefined,
+  TMessage extends ErrorMessage<NonOptionalIssue> | undefined,
+> = TSchema extends
+  | ObjectSchemaAsync<infer TEntries, ErrorMessage<ObjectIssue> | undefined>
+  | StrictObjectSchemaAsync<
+      infer TEntries,
+      ErrorMessage<StrictObjectIssue> | undefined
     >
-  >(arg2, arg3, arg4);
+  ? Omit<TSchema, 'entries' | '~standard' | '~run' | '~types'> & {
+      /**
+       * The object entries.
+       */
+      readonly entries: RequiredEntries<TEntries, TKeys, TMessage>;
+      /**
+       * The Standard Schema properties.
+       *
+       * @internal
+       */
+      readonly '~standard': StandardProps<
+        InferObjectInput<RequiredEntries<TEntries, TKeys, TMessage>>,
+        InferObjectOutput<RequiredEntries<TEntries, TKeys, TMessage>>
+      >;
+      /**
+       * Parses unknown input.
+       *
+       * @param dataset The input dataset.
+       * @param config The configuration.
+       *
+       * @returns The output dataset.
+       *
+       * @internal
+       */
+      readonly '~run': (
+        dataset: UnknownDataset,
+        config: Config<BaseIssue<unknown>>
+      ) => Promise<
+        OutputDataset<
+          InferObjectOutput<RequiredEntries<TEntries, TKeys, TMessage>>,
+          NonOptionalIssue | InferIssue<TSchema>
+        >
+      >;
+      /**
+       * The input, output and issue type.
+       *
+       * @internal
+       */
+      readonly '~types'?:
+        | {
+            readonly input: InferObjectInput<
+              RequiredEntries<TEntries, TKeys, TMessage>
+            >;
+            readonly output: InferObjectOutput<
+              RequiredEntries<TEntries, TKeys, TMessage>
+            >;
+            readonly issue: NonOptionalIssue | InferIssue<TSchema>;
+          }
+        | undefined;
+    }
+  : TSchema extends LooseObjectSchemaAsync<
+        infer TEntries,
+        ErrorMessage<LooseObjectIssue> | undefined
+      >
+    ? Omit<TSchema, 'entries' | '~standard' | '~run' | '~types'> & {
+        /**
+         * The object entries.
+         */
+        readonly entries: RequiredEntries<TEntries, TKeys, TMessage>;
+        /**
+         * The Standard Schema properties.
+         *
+         * @internal
+         */
+        readonly '~standard': StandardProps<
+          InferObjectInput<RequiredEntries<TEntries, TKeys, TMessage>> & {
+            [key: string]: unknown;
+          },
+          InferObjectOutput<RequiredEntries<TEntries, TKeys, TMessage>> & {
+            [key: string]: unknown;
+          }
+        >;
+        /**
+         * Parses unknown input.
+         *
+         * @param dataset The input dataset.
+         * @param config The configuration.
+         *
+         * @returns The output dataset.
+         *
+         * @internal
+         */
+        readonly '~run': (
+          dataset: UnknownDataset,
+          config: Config<BaseIssue<unknown>>
+        ) => Promise<
+          OutputDataset<
+            InferObjectOutput<RequiredEntries<TEntries, TKeys, TMessage>> & {
+              [key: string]: unknown;
+            },
+            NonOptionalIssue | InferIssue<TSchema>
+          >
+        >;
+        /**
+         * The input, output and issue type.
+         *
+         * @internal
+         */
+        readonly '~types'?:
+          | {
+              readonly input: InferObjectInput<
+                RequiredEntries<TEntries, TKeys, TMessage>
+              > & {
+                [key: string]: unknown;
+              };
+              readonly output: InferObjectOutput<
+                RequiredEntries<TEntries, TKeys, TMessage>
+              > & {
+                [key: string]: unknown;
+              };
+              readonly issue: NonOptionalIssue | InferIssue<TSchema>;
+            }
+          | undefined;
+      }
+    : TSchema extends ObjectWithRestSchemaAsync<
+          infer TEntries,
+          infer TRest,
+          ErrorMessage<ObjectWithRestIssue> | undefined
+        >
+      ? Omit<TSchema, 'entries' | '~standard' | '~run' | '~types'> & {
+          /**
+           * The object entries.
+           */
+          readonly entries: RequiredEntries<TEntries, TKeys, TMessage>;
+          /**
+           * The Standard Schema properties.
+           *
+           * @internal
+           */
+          readonly '~standard': StandardProps<
+            InferObjectInput<RequiredEntries<TEntries, TKeys, TMessage>> & {
+              [key: string]: InferInput<TRest>;
+            },
+            InferObjectOutput<RequiredEntries<TEntries, TKeys, TMessage>> & {
+              [key: string]: InferOutput<TRest>;
+            }
+          >;
+          /**
+           * Parses unknown input.
+           *
+           * @param dataset The input dataset.
+           * @param config The configuration.
+           *
+           * @returns The output dataset.
+           *
+           * @internal
+           */
+          readonly '~run': (
+            dataset: UnknownDataset,
+            config: Config<BaseIssue<unknown>>
+          ) => Promise<
+            OutputDataset<
+              InferObjectOutput<RequiredEntries<TEntries, TKeys, TMessage>> & {
+                [key: string]: InferOutput<TRest>;
+              },
+              NonOptionalIssue | InferIssue<TSchema>
+            >
+          >;
+          /**
+           * The input, output and issue type.
+           *
+           * @internal
+           */
+          readonly '~types'?:
+            | {
+                readonly input: InferObjectInput<
+                  RequiredEntries<TEntries, TKeys, TMessage>
+                > & {
+                  [key: string]: InferInput<TRest>;
+                };
+                readonly output: InferObjectOutput<
+                  RequiredEntries<TEntries, TKeys, TMessage>
+                > & { [key: string]: InferOutput<TRest> };
+                readonly issue: NonOptionalIssue | InferIssue<TSchema>;
+              }
+            | undefined;
+        }
+      : never;
 
-  // Create and return object schema
-  return objectAsync(
-    Object.entries(schema.object.entries).reduce(
-      (entries, [key, schema]) => ({
-        ...entries,
-        [key]: nonOptionalAsync(schema as BaseSchema | BaseSchemaAsync),
-      }),
-      {}
-    ) as Required<TObjectSchema['object']['entries']>,
-    rest,
-    error,
-    pipe
-  );
+/**
+ * Creates a modified copy of an object schema that marks all entries as required.
+ *
+ * @param schema The schema to modify.
+ *
+ * @returns An object schema.
+ */
+// @ts-expect-error FIXME: TypeScript incorrectly claims that the overload
+// signature is not compatible with the implementation signature
+export function requiredAsync<const TSchema extends Schema>(
+  schema: TSchema
+): SchemaWithRequiredAsync<TSchema, undefined, undefined>;
+
+/**
+ * Creates a modified copy of an object schema that marks all entries as required.
+ *
+ * @param schema The schema to modify.
+ * @param message The error message.
+ *
+ * @returns An object schema.
+ */
+export function requiredAsync<
+  const TSchema extends Schema,
+  const TMessage extends ErrorMessage<NonOptionalIssue> | undefined,
+>(
+  schema: TSchema,
+  message: TMessage
+): SchemaWithRequiredAsync<TSchema, undefined, TMessage>;
+
+/**
+ * Creates a modified copy of an object schema that marks the selected entries
+ * as required.
+ *
+ * @param schema The schema to modify.
+ * @param keys The selected entries.
+ *
+ * @returns An object schema.
+ */
+export function requiredAsync<
+  const TSchema extends Schema,
+  const TKeys extends ObjectKeys<TSchema>,
+>(
+  schema: TSchema,
+  keys: TKeys
+): SchemaWithRequiredAsync<TSchema, TKeys, undefined>;
+
+/**
+ * Creates a modified copy of an object schema that marks the selected entries
+ * as required.
+ *
+ * @param schema The schema to modify.
+ * @param keys The selected entries.
+ * @param message The error message.
+ *
+ * @returns An object schema.
+ */
+export function requiredAsync<
+  const TSchema extends Schema,
+  const TKeys extends ObjectKeys<TSchema>,
+  const TMessage extends ErrorMessage<NonOptionalIssue> | undefined,
+>(
+  schema: TSchema,
+  keys: TKeys,
+  message: TMessage
+): SchemaWithRequiredAsync<TSchema, TKeys, TMessage>;
+
+// @__NO_SIDE_EFFECTS__
+export function requiredAsync(
+  schema: Schema,
+  arg2?: ErrorMessage<NonOptionalIssue> | ObjectKeys<Schema>,
+  arg3?: ErrorMessage<NonOptionalIssue>
+): SchemaWithRequiredAsync<
+  Schema,
+  ObjectKeys<Schema> | undefined,
+  ErrorMessage<NonOptionalIssue> | undefined
+> {
+  // Get keys and message from arguments
+  const keys = Array.isArray(arg2) ? arg2 : undefined;
+  const message = (Array.isArray(arg2) ? arg3 : arg2) as
+    | ErrorMessage<NonOptionalIssue>
+    | undefined;
+
+  // Create modified object entries
+  const entries: RequiredEntries<
+    ObjectEntriesAsync,
+    ObjectKeys<Schema>,
+    ErrorMessage<NonOptionalIssue> | undefined
+  > = {};
+  for (const key in schema.entries) {
+    // @ts-expect-error
+    entries[key] =
+      !keys || keys.includes(key)
+        ? nonOptionalAsync(schema.entries[key], message)
+        : schema.entries[key];
+  }
+
+  // Return modified copy of schema
+  return {
+    ...schema,
+    entries,
+    get '~standard'() {
+      return _getStandardProps(this);
+    },
+  };
 }

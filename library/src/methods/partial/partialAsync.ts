@@ -1,187 +1,303 @@
 import {
-  objectAsync,
-  type ObjectEntriesAsync,
-  type ObjectOutput,
-  type ObjectSchema,
+  type LooseObjectIssue,
+  type LooseObjectSchemaAsync,
+  type ObjectIssue,
   type ObjectSchemaAsync,
+  type ObjectWithRestIssue,
+  type ObjectWithRestSchemaAsync,
   optionalAsync,
   type OptionalSchemaAsync,
+  type StrictObjectIssue,
+  type StrictObjectSchemaAsync,
 } from '../../schemas/index.ts';
 import type {
+  BaseIssue,
   BaseSchema,
   BaseSchemaAsync,
+  Config,
   ErrorMessage,
-  PipeAsync,
-} from '../../types.ts';
-import { getRestAndDefaultArgs } from '../../utils/index.ts';
+  InferInput,
+  InferIssue,
+  InferObjectInput,
+  InferObjectOutput,
+  InferOutput,
+  ObjectEntriesAsync,
+  ObjectKeys,
+  OutputDataset,
+  SchemaWithoutPipe,
+  StandardProps,
+  UnknownDataset,
+} from '../../types/index.ts';
+import { _getStandardProps } from '../../utils/index.ts';
 
 /**
- * Partial object entries async type.
+ * Schema type.
  */
-export type PartialObjectEntriesAsync<
-  TObjectEntries extends ObjectEntriesAsync
+type Schema = SchemaWithoutPipe<
+  | LooseObjectSchemaAsync<
+      ObjectEntriesAsync,
+      ErrorMessage<LooseObjectIssue> | undefined
+    >
+  | ObjectSchemaAsync<ObjectEntriesAsync, ErrorMessage<ObjectIssue> | undefined>
+  | ObjectWithRestSchemaAsync<
+      ObjectEntriesAsync,
+      | BaseSchema<unknown, unknown, BaseIssue<unknown>>
+      | BaseSchemaAsync<unknown, unknown, BaseIssue<unknown>>,
+      ErrorMessage<ObjectWithRestIssue> | undefined
+    >
+  | StrictObjectSchemaAsync<
+      ObjectEntriesAsync,
+      ErrorMessage<StrictObjectIssue> | undefined
+    >
+>;
+
+/**
+ * Partial entries type.
+ */
+type PartialEntries<
+  TEntries extends ObjectEntriesAsync,
+  TKeys extends readonly (keyof TEntries)[] | undefined,
 > = {
-  [TKey in keyof TObjectEntries]: OptionalSchemaAsync<TObjectEntries[TKey]>;
+  [TKey in keyof TEntries]: TKeys extends readonly (keyof TEntries)[]
+    ? TKey extends TKeys[number]
+      ? OptionalSchemaAsync<TEntries[TKey], undefined>
+      : TEntries[TKey]
+    : OptionalSchemaAsync<TEntries[TKey], undefined>;
 };
 
 /**
- * Creates an async object schema consisting of all properties of an existing
- * object schema set to optional.
- *
- * @param schema The affected schema.
- * @param pipe A validation and transformation pipe.
- *
- * @returns An async object schema.
+ * Schema with partial type.
  */
-export function partialAsync<
-  TObjectSchema extends ObjectSchema<any, any> | ObjectSchemaAsync<any, any>
->(
-  schema: TObjectSchema,
-  pipe?: PipeAsync<
-    ObjectOutput<
-      PartialObjectEntriesAsync<TObjectSchema['object']['entries']>,
-      undefined
+export type SchemaWithPartialAsync<
+  TSchema extends Schema,
+  TKeys extends ObjectKeys<TSchema> | undefined,
+> = TSchema extends
+  | ObjectSchemaAsync<infer TEntries, ErrorMessage<ObjectIssue> | undefined>
+  | StrictObjectSchemaAsync<
+      infer TEntries,
+      ErrorMessage<StrictObjectIssue> | undefined
     >
-  >
-): ObjectSchemaAsync<
-  PartialObjectEntriesAsync<TObjectSchema['object']['entries']>
->;
-
-/**
- * Creates an async object schema consisting of all properties of an existing
- * object schema set to optional.
- *
- * @param schema The affected schema.
- * @param error The error message.
- * @param pipe A validation and transformation pipe.
- *
- * @returns An async object schema.
- */
-export function partialAsync<
-  TObjectSchema extends ObjectSchema<any, any> | ObjectSchemaAsync<any, any>
->(
-  schema: TObjectSchema,
-  error?: ErrorMessage,
-  pipe?: PipeAsync<
-    ObjectOutput<
-      PartialObjectEntriesAsync<TObjectSchema['object']['entries']>,
-      undefined
-    >
-  >
-): ObjectSchemaAsync<
-  PartialObjectEntriesAsync<TObjectSchema['object']['entries']>
->;
-
-/**
- * Creates an async object schema consisting of all properties of an existing
- * object schema set to optional.
- *
- * @param schema The affected schema.
- * @param rest The object rest.
- * @param pipe A validation and transformation pipe.
- *
- * @returns An async object schema.
- */
-export function partialAsync<
-  TObjectSchema extends ObjectSchema<any, any> | ObjectSchemaAsync<any, any>,
-  TObjectRest extends BaseSchema | undefined
->(
-  schema: TObjectSchema,
-  rest: TObjectRest,
-  pipe?: PipeAsync<
-    ObjectOutput<
-      PartialObjectEntriesAsync<TObjectSchema['object']['entries']>,
-      TObjectRest
-    >
-  >
-): ObjectSchemaAsync<
-  PartialObjectEntriesAsync<TObjectSchema['object']['entries']>,
-  TObjectRest
->;
-
-/**
- * Creates an async object schema consisting of all properties of an existing
- * object schema set to optional.
- *
- * @param schema The affected schema.
- * @param rest The object rest.
- * @param error The error message.
- * @param pipe A validation and transformation pipe.
- *
- * @returns An async object schema.
- */
-export function partialAsync<
-  TObjectSchema extends ObjectSchema<any, any> | ObjectSchemaAsync<any, any>,
-  TObjectRest extends BaseSchema | undefined
->(
-  schema: TObjectSchema,
-  rest: TObjectRest,
-  error?: ErrorMessage,
-  pipe?: PipeAsync<
-    ObjectOutput<
-      PartialObjectEntriesAsync<TObjectSchema['object']['entries']>,
-      TObjectRest
-    >
-  >
-): ObjectSchemaAsync<
-  PartialObjectEntriesAsync<TObjectSchema['object']['entries']>,
-  TObjectRest
->;
-
-export function partialAsync<
-  TObjectSchema extends ObjectSchema<any, any> | ObjectSchemaAsync<any, any>,
-  TObjectRest extends BaseSchema | undefined = undefined
->(
-  schema: TObjectSchema,
-  arg2?:
-    | PipeAsync<
-        ObjectOutput<
-          PartialObjectEntriesAsync<TObjectSchema['object']['entries']>,
-          TObjectRest
+  ? Omit<TSchema, 'entries' | '~standard' | '~run' | '~types'> & {
+      /**
+       * The object entries.
+       */
+      readonly entries: PartialEntries<TEntries, TKeys>;
+      /**
+       * The Standard Schema properties.
+       *
+       * @internal
+       */
+      readonly '~standard': StandardProps<
+        InferObjectInput<PartialEntries<TEntries, TKeys>>,
+        InferObjectOutput<PartialEntries<TEntries, TKeys>>
+      >;
+      /**
+       * Parses unknown input.
+       *
+       * @param dataset The input dataset.
+       * @param config The configuration.
+       *
+       * @returns The output dataset.
+       *
+       * @internal
+       */
+      readonly '~run': (
+        dataset: UnknownDataset,
+        config: Config<BaseIssue<unknown>>
+      ) => Promise<
+        OutputDataset<
+          InferObjectOutput<PartialEntries<TEntries, TKeys>>,
+          InferIssue<TSchema>
         >
+      >;
+      /**
+       * The input, output and issue type.
+       *
+       * @internal
+       */
+      readonly '~types'?:
+        | {
+            readonly input: InferObjectInput<PartialEntries<TEntries, TKeys>>;
+            readonly output: InferObjectOutput<PartialEntries<TEntries, TKeys>>;
+            readonly issue: InferIssue<TSchema>;
+          }
+        | undefined;
+    }
+  : TSchema extends LooseObjectSchemaAsync<
+        infer TEntries,
+        ErrorMessage<LooseObjectIssue> | undefined
       >
-    | ErrorMessage
-    | TObjectRest,
-  arg3?:
-    | PipeAsync<
-        ObjectOutput<
-          PartialObjectEntriesAsync<TObjectSchema['object']['entries']>,
-          TObjectRest
+    ? Omit<TSchema, 'entries' | '~standard' | '~run' | '~types'> & {
+        /**
+         * The object entries.
+         */
+        readonly entries: PartialEntries<TEntries, TKeys>;
+        /**
+         * The Standard Schema properties.
+         *
+         * @internal
+         */
+        readonly '~standard': StandardProps<
+          InferObjectInput<PartialEntries<TEntries, TKeys>> & {
+            [key: string]: unknown;
+          },
+          InferObjectOutput<PartialEntries<TEntries, TKeys>> & {
+            [key: string]: unknown;
+          }
+        >;
+        /**
+         * Parses unknown input.
+         *
+         * @param dataset The input dataset.
+         * @param config The configuration.
+         *
+         * @returns The output dataset.
+         *
+         * @internal
+         */
+        readonly '~run': (
+          dataset: UnknownDataset,
+          config: Config<BaseIssue<unknown>>
+        ) => Promise<
+          OutputDataset<
+            InferObjectOutput<PartialEntries<TEntries, TKeys>> & {
+              [key: string]: unknown;
+            },
+            InferIssue<TSchema>
+          >
+        >;
+        /**
+         * The input, output and issue type.
+         *
+         * @internal
+         */
+        readonly '~types'?:
+          | {
+              readonly input: InferObjectInput<
+                PartialEntries<TEntries, TKeys>
+              > & {
+                [key: string]: unknown;
+              };
+              readonly output: InferObjectOutput<
+                PartialEntries<TEntries, TKeys>
+              > & {
+                [key: string]: unknown;
+              };
+              readonly issue: InferIssue<TSchema>;
+            }
+          | undefined;
+      }
+    : TSchema extends ObjectWithRestSchemaAsync<
+          infer TEntries,
+          infer TRest,
+          ErrorMessage<ObjectWithRestIssue> | undefined
         >
-      >
-    | ErrorMessage,
-  arg4?: PipeAsync<
-    ObjectOutput<
-      PartialObjectEntriesAsync<TObjectSchema['object']['entries']>,
-      TObjectRest
-    >
-  >
-): ObjectSchemaAsync<
-  PartialObjectEntriesAsync<TObjectSchema['object']['entries']>,
-  TObjectRest
-> {
-  // Get rest, error and pipe argument
-  const [rest, error, pipe] = getRestAndDefaultArgs<
-    TObjectRest,
-    PipeAsync<
-      ObjectOutput<
-        PartialObjectEntriesAsync<TObjectSchema['object']['entries']>,
-        TObjectRest
-      >
-    >
-  >(arg2, arg3, arg4);
+      ? Omit<TSchema, 'entries' | '~standard' | '~run' | '~types'> & {
+          /**
+           * The object entries.
+           */
+          readonly entries: PartialEntries<TEntries, TKeys>;
+          /**
+           * The Standard Schema properties.
+           *
+           * @internal
+           */
+          readonly '~standard': StandardProps<
+            InferObjectInput<PartialEntries<TEntries, TKeys>> & {
+              [key: string]: InferInput<TRest>;
+            },
+            InferObjectOutput<PartialEntries<TEntries, TKeys>> & {
+              [key: string]: InferOutput<TRest>;
+            }
+          >;
+          /**
+           * Parses unknown input.
+           *
+           * @param dataset The input dataset.
+           * @param config The configuration.
+           *
+           * @returns The output dataset.
+           *
+           * @internal
+           */
+          readonly '~run': (
+            dataset: UnknownDataset,
+            config: Config<BaseIssue<unknown>>
+          ) => Promise<
+            OutputDataset<
+              InferObjectOutput<PartialEntries<TEntries, TKeys>> & {
+                [key: string]: InferOutput<TRest>;
+              },
+              InferIssue<TSchema>
+            >
+          >;
+          /**
+           * The input, output and issue type.
+           *
+           * @internal
+           */
+          readonly '~types'?:
+            | {
+                readonly input: InferObjectInput<
+                  PartialEntries<TEntries, TKeys>
+                > & {
+                  [key: string]: InferInput<TRest>;
+                };
+                readonly output: InferObjectOutput<
+                  PartialEntries<TEntries, TKeys>
+                > & { [key: string]: InferOutput<TRest> };
+                readonly issue: InferIssue<TSchema>;
+              }
+            | undefined;
+        }
+      : never;
 
-  // Create and return object schema
-  return objectAsync(
-    Object.entries(schema.object.entries).reduce(
-      (entries, [key, schema]) => ({
-        ...entries,
-        [key]: optionalAsync(schema as BaseSchema | BaseSchemaAsync),
-      }),
-      {}
-    ) as PartialObjectEntriesAsync<TObjectSchema['object']['entries']>,
-    rest,
-    error,
-    pipe
-  );
+/**
+ * Creates a modified copy of an object schema that marks all entries as optional.
+ *
+ * @param schema The schema to modify.
+ *
+ * @returns An object schema.
+ */
+export function partialAsync<const TSchema extends Schema>(
+  schema: TSchema
+): SchemaWithPartialAsync<TSchema, undefined>;
+
+/**
+ * Creates a modified copy of an object schema that marks the selected entries
+ * as optional.
+ *
+ * @param schema The schema to modify.
+ * @param keys The selected entries.
+ *
+ * @returns An object schema.
+ */
+export function partialAsync<
+  const TSchema extends Schema,
+  const TKeys extends ObjectKeys<TSchema>,
+>(schema: TSchema, keys: TKeys): SchemaWithPartialAsync<TSchema, TKeys>;
+
+// @__NO_SIDE_EFFECTS__
+export function partialAsync(
+  schema: Schema,
+  keys?: ObjectKeys<Schema>
+): SchemaWithPartialAsync<Schema, ObjectKeys<Schema> | undefined> {
+  // Create modified object entries
+  const entries: PartialEntries<ObjectEntriesAsync, ObjectKeys<Schema>> = {};
+  for (const key in schema.entries) {
+    // @ts-expect-error
+    entries[key] =
+      !keys || keys.includes(key)
+        ? optionalAsync(schema.entries[key])
+        : schema.entries[key];
+  }
+
+  // Return modified copy of schema
+  return {
+    ...schema,
+    entries,
+    get '~standard'() {
+      return _getStandardProps(this);
+    },
+  };
 }

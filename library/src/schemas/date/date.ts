@@ -1,77 +1,101 @@
-import type { BaseSchema, ErrorMessage, Pipe } from '../../types.ts';
-import {
-  executePipe,
-  getDefaultArgs,
-  getSchemaIssues,
-} from '../../utils/index.ts';
+import type {
+  BaseIssue,
+  BaseSchema,
+  ErrorMessage,
+  OutputDataset,
+} from '../../types/index.ts';
+import { _addIssue, _getStandardProps } from '../../utils/index.ts';
 
 /**
- * Date schema type.
+ * Date issue interface.
  */
-export type DateSchema<TOutput = Date> = BaseSchema<Date, TOutput> & {
-  schema: 'date';
-};
+export interface DateIssue extends BaseIssue<unknown> {
+  /**
+   * The issue kind.
+   */
+  readonly kind: 'schema';
+  /**
+   * The issue type.
+   */
+  readonly type: 'date';
+  /**
+   * The expected property.
+   */
+  readonly expected: 'Date';
+}
+
+/**
+ * Date schema interface.
+ */
+export interface DateSchema<
+  TMessage extends ErrorMessage<DateIssue> | undefined,
+> extends BaseSchema<Date, Date, DateIssue> {
+  /**
+   * The schema type.
+   */
+  readonly type: 'date';
+  /**
+   * The schema reference.
+   */
+  readonly reference: typeof date;
+  /**
+   * The expected property.
+   */
+  readonly expects: 'Date';
+  /**
+   * The error message.
+   */
+  readonly message: TMessage;
+}
 
 /**
  * Creates a date schema.
  *
- * @param pipe A validation and transformation pipe.
- *
  * @returns A date schema.
  */
-export function date(pipe?: Pipe<Date>): DateSchema;
+export function date(): DateSchema<undefined>;
 
 /**
  * Creates a date schema.
  *
- * @param error The error message.
- * @param pipe A validation and transformation pipe.
+ * @param message The error message.
  *
  * @returns A date schema.
  */
-export function date(error?: ErrorMessage, pipe?: Pipe<Date>): DateSchema;
+export function date<
+  const TMessage extends ErrorMessage<DateIssue> | undefined,
+>(message: TMessage): DateSchema<TMessage>;
 
+// @__NO_SIDE_EFFECTS__
 export function date(
-  arg1?: ErrorMessage | Pipe<Date>,
-  arg2?: Pipe<Date>
-): DateSchema {
-  // Get error and pipe argument
-  const [error, pipe] = getDefaultArgs(arg1, arg2);
-
-  // Create and return date schema
+  message?: ErrorMessage<DateIssue>
+): DateSchema<ErrorMessage<DateIssue> | undefined> {
   return {
-    /**
-     * The schema type.
-     */
-    schema: 'date',
-
-    /**
-     * Whether it's async.
-     */
+    kind: 'schema',
+    type: 'date',
+    reference: date,
+    expects: 'Date',
     async: false,
-
-    /**
-     * Parses unknown input based on its schema.
-     *
-     * @param input The input to be parsed.
-     * @param info The parse info.
-     *
-     * @returns The parsed output.
-     */
-    _parse(input, info) {
-      // Check type of input
-      if (!(input instanceof Date) || isNaN(input.getTime())) {
-        return getSchemaIssues(
-          info,
-          'type',
-          'date',
-          error || 'Invalid type',
-          input
-        );
+    message,
+    get '~standard'() {
+      return _getStandardProps(this);
+    },
+    '~run'(dataset, config) {
+      if (dataset.value instanceof Date) {
+        // @ts-expect-error
+        if (!isNaN(dataset.value)) {
+          // @ts-expect-error
+          dataset.typed = true;
+        } else {
+          _addIssue(this, 'type', dataset, config, {
+            received: '"Invalid Date"',
+          });
+        }
+      } else {
+        _addIssue(this, 'type', dataset, config);
       }
-
-      // Execute pipe and return result
-      return executePipe(input, pipe, info, 'date');
+      // @ts-expect-error
+      return dataset as OutputDataset<Date, DateIssue>;
     },
   };
 }

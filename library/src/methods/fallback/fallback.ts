@@ -1,42 +1,67 @@
-import type { BaseSchema, Output } from '../../types.ts';
-import { getOutput } from '../../utils/index.ts';
-import type { FallbackInfo } from './types.ts';
+import type {
+  BaseIssue,
+  BaseSchema,
+  Config,
+  InferIssue,
+  InferOutput,
+  MaybeReadonly,
+  OutputDataset,
+} from '../../types/index.ts';
+import { _getStandardProps } from '../../utils/index.ts';
+import { getFallback } from '../getFallback/index.ts';
 
 /**
- * Returns a fallback value when validating the passed schema failed.
+ * Fallback type.
+ */
+export type Fallback<
+  TSchema extends BaseSchema<unknown, unknown, BaseIssue<unknown>>,
+> =
+  | MaybeReadonly<InferOutput<TSchema>>
+  | ((
+      dataset?: OutputDataset<InferOutput<TSchema>, InferIssue<TSchema>>,
+      config?: Config<InferIssue<TSchema>>
+    ) => MaybeReadonly<InferOutput<TSchema>>);
+
+/**
+ * Schema with fallback type.
+ */
+export type SchemaWithFallback<
+  TSchema extends BaseSchema<unknown, unknown, BaseIssue<unknown>>,
+  TFallback extends Fallback<TSchema>,
+> = TSchema & {
+  /**
+   * The fallback value.
+   */
+  readonly fallback: TFallback;
+};
+
+/**
+ * Returns a fallback value as output if the input does not match the schema.
  *
  * @param schema The schema to catch.
- * @param value The fallback value.
+ * @param fallback The fallback value.
  *
  * @returns The passed schema.
  */
-export function fallback<TSchema extends BaseSchema>(
+// @__NO_SIDE_EFFECTS__
+export function fallback<
+  const TSchema extends BaseSchema<unknown, unknown, BaseIssue<unknown>>,
+  const TFallback extends Fallback<TSchema>,
+>(
   schema: TSchema,
-  value: Output<TSchema> | ((info: FallbackInfo) => Output<TSchema>)
-): TSchema {
+  fallback: TFallback
+): SchemaWithFallback<TSchema, TFallback> {
   return {
     ...schema,
-
-    /**
-     * Parses unknown input based on its schema.
-     *
-     * @param input The input to be parsed.
-     * @param info The parse info.
-     *
-     * @returns The parsed output.
-     */
-    _parse(input, info) {
-      const result = schema._parse(input, info);
-      return getOutput(
-        result.issues
-          ? typeof value === 'function'
-            ? (value as (info: FallbackInfo) => Output<TSchema>)({
-                input,
-                issues: result.issues,
-              })
-            : value
-          : result.output
-      );
+    fallback,
+    get '~standard'() {
+      return _getStandardProps(this);
+    },
+    '~run'(dataset, config) {
+      const outputDataset = schema['~run'](dataset, config);
+      return outputDataset.issues
+        ? { typed: true, value: getFallback(this, outputDataset, config) }
+        : outputDataset;
     },
   };
 }

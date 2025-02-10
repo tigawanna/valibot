@@ -1,30 +1,43 @@
 import type {
+  BaseIssue,
   BaseSchema,
   BaseSchemaAsync,
-  Input,
-  Output,
-} from '../../types.ts';
+  InferInput,
+  InferOutput,
+} from '../../types/index.ts';
 
 /**
- * Set path item type.
+ * Set issue interface.
  */
-export type SetPathItem = {
-  schema: 'set';
-  input: Set<any>;
-  key: number;
-  value: any;
-};
+export interface SetIssue extends BaseIssue<unknown> {
+  /**
+   * The issue kind.
+   */
+  readonly kind: 'schema';
+  /**
+   * The issue type.
+   */
+  readonly type: 'set';
+  /**
+   * The expected property.
+   */
+  readonly expected: 'Set';
+}
 
 /**
- * Set output inference type.
+ * Infer set input type.
  */
-export type SetInput<TSetValue extends BaseSchema | BaseSchemaAsync> = Set<
-  Input<TSetValue>
->;
+export type InferSetInput<
+  TValue extends
+    | BaseSchema<unknown, unknown, BaseIssue<unknown>>
+    | BaseSchemaAsync<unknown, unknown, BaseIssue<unknown>>,
+> = Set<InferInput<TValue>>;
 
 /**
- * Set output inference type.
+ * Infer set output type.
  */
-export type SetOutput<TSetValue extends BaseSchema | BaseSchemaAsync> = Set<
-  Output<TSetValue>
->;
+export type InferSetOutput<
+  TValue extends
+    | BaseSchema<unknown, unknown, BaseIssue<unknown>>
+    | BaseSchemaAsync<unknown, unknown, BaseIssue<unknown>>,
+> = Set<InferOutput<TValue>>;

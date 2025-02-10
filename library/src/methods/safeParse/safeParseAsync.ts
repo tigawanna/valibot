@@ -1,33 +1,40 @@
-import { ValiError } from '../../error/index.ts';
-import type { BaseSchema, BaseSchemaAsync, ParseInfo } from '../../types.ts';
+import { getGlobalConfig } from '../../storages/index.ts';
+import type {
+  BaseIssue,
+  BaseSchema,
+  BaseSchemaAsync,
+  Config,
+  InferIssue,
+} from '../../types/index.ts';
 import type { SafeParseResult } from './types.ts';
 
 /**
- * Parses unknown input based on a schema.
+ * Parses an unknown input based on a schema.
  *
  * @param schema The schema to be used.
  * @param input The input to be parsed.
- * @param info The optional parse info.
+ * @param config The parse configuration.
  *
- * @returns The parsed output.
+ * @returns The parse result.
  */
+// @__NO_SIDE_EFFECTS__
 export async function safeParseAsync<
-  TSchema extends BaseSchema | BaseSchemaAsync
+  const TSchema extends
+    | BaseSchema<unknown, unknown, BaseIssue<unknown>>
+    | BaseSchemaAsync<unknown, unknown, BaseIssue<unknown>>,
 >(
   schema: TSchema,
   input: unknown,
-  info?: Pick<ParseInfo, 'abortEarly' | 'abortPipeEarly' | 'skipPipe'>
+  config?: Config<InferIssue<TSchema>>
 ): Promise<SafeParseResult<TSchema>> {
-  const result = await schema._parse(input, info);
-  return result.issues
-    ? {
-        success: false,
-        error: new ValiError(result.issues),
-        issues: result.issues,
-      }
-    : {
-        success: true,
-        data: result.output,
-        output: result.output,
-      };
+  const dataset = await schema['~run'](
+    { value: input },
+    getGlobalConfig(config)
+  );
+  return {
+    typed: dataset.typed,
+    success: !dataset.issues,
+    output: dataset.value,
+    issues: dataset.issues,
+  } as SafeParseResult<TSchema>;
 }
