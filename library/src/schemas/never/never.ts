@@ -1,48 +1,89 @@
-import type { BaseSchema, ErrorMessage } from '../../types.ts';
-import { getSchemaIssues } from '../../utils/index.ts';
+import type {
+  BaseIssue,
+  BaseSchema,
+  ErrorMessage,
+  FailureDataset,
+} from '../../types/index.ts';
+import { _addIssue, _getStandardProps } from '../../utils/index.ts';
 
 /**
- * Never schema type.
+ * Never issue interface.
  */
-export type NeverSchema = BaseSchema<never> & {
-  schema: 'never';
-};
+export interface NeverIssue extends BaseIssue<unknown> {
+  /**
+   * The issue kind.
+   */
+  readonly kind: 'schema';
+  /**
+   * The issue type.
+   */
+  readonly type: 'never';
+  /**
+   * The expected property.
+   */
+  readonly expected: 'never';
+}
+
+/**
+ * Never schema interface.
+ */
+export interface NeverSchema<
+  TMessage extends ErrorMessage<NeverIssue> | undefined,
+> extends BaseSchema<never, never, NeverIssue> {
+  /**
+   * The schema type.
+   */
+  readonly type: 'never';
+  /**
+   * The schema reference.
+   */
+  readonly reference: typeof never;
+  /**
+   * The expected property.
+   */
+  readonly expects: 'never';
+  /**
+   * The error message.
+   */
+  readonly message: TMessage;
+}
 
 /**
  * Creates a never schema.
  *
- * @param error The error message.
+ * @returns A never schema.
+ */
+export function never(): NeverSchema<undefined>;
+
+/**
+ * Creates a never schema.
+ *
+ * @param message The error message.
  *
  * @returns A never schema.
  */
-export function never(error?: ErrorMessage): NeverSchema {
+export function never<
+  const TMessage extends ErrorMessage<NeverIssue> | undefined,
+>(message: TMessage): NeverSchema<TMessage>;
+
+// @__NO_SIDE_EFFECTS__
+export function never(
+  message?: ErrorMessage<NeverIssue>
+): NeverSchema<ErrorMessage<NeverIssue> | undefined> {
   return {
-    /**
-     * The schema type.
-     */
-    schema: 'never',
-
-    /**
-     * Whether it's async.
-     */
+    kind: 'schema',
+    type: 'never',
+    reference: never,
+    expects: 'never',
     async: false,
-
-    /**
-     * Parses unknown input based on its schema.
-     *
-     * @param input The input to be parsed.
-     * @param info The parse info.
-     *
-     * @returns The parsed output.
-     */
-    _parse(input, info) {
-      return getSchemaIssues(
-        info,
-        'type',
-        'never',
-        error || 'Invalid type',
-        input
-      );
+    message,
+    get '~standard'() {
+      return _getStandardProps(this);
+    },
+    '~run'(dataset, config) {
+      _addIssue(this, 'type', dataset, config);
+      // @ts-expect-error
+      return dataset as FailureDataset<NeverIssue>;
     },
   };
 }

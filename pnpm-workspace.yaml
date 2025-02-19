@@ -1,3 +1,5 @@
 packages:
+  - 'codemod/*'
   - 'library'
+  - 'packages/*'
   - 'website'

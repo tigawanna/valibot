@@ -1,107 +1,223 @@
 ---
 title: Pipelines
-description: For detailed validations and transformations, a pipeline can be passed as the last optional argument to almost any schema function.
+description: >-
+  For detailed validations and transformations, a schema can be wrapped in a
+  pipeline. This is useful to validate further details apart from the raw data
+  type.
+contributors:
+  - fabian-hiller
+  - BastiDood
+  - morinokami
+  - jasperteo
+  - daxeh
+  - ariskemper
+  - EltonLobo07
 ---
 
 import { Link } from '@builder.io/qwik-city';
+import { ApiList } from '~/components';
 
 # Pipelines
 
-For detailed validations and transformations, a pipeline can be passed as the last optional argument to almost any schema function. Especially for schema functions like <Link href="/api/string">`string`</Link>, <Link href="/api/number">`number`</Link>, <Link href="/api/bigint">`bigint`</Link>, <Link href="/api/date">`date`</Link> and <Link href="/api/array">`array`</Link> this feature is useful to validate further details apart from the raw data type.
+For detailed validations and transformations, a schema can be wrapped in a pipeline. Especially for schema functions like <Link href="/api/string/">`string`</Link>, <Link href="/api/number/">`number`</Link>, <Link href="/api/date/">`date`</Link>, <Link href="/api/object/">`object`</Link>, and <Link href="/api/array/">`array`</Link>, this feature is useful for validating properties beyond the raw data type.
 
 ## How it works
 
-In simple words, a pipeline is an array of functions that synchronously passes through the input of a schema. Each function can examine and modify the input. The pipeline is therefore perfect for detailed validations and transformations.
-
-> Important: The pipeline cannot be used to change the data type of a value. For this, the <Link href="/api/transform">`transform`</Link> method must be used explicitly.
+In simple words, a pipeline is a list of schemas and actions that synchronously passes through the input data. It must always start with a schema, followed by up to 19 schemas or actions. Each schema and action can examine and modify the input. The pipeline is therefore perfect for detailed validations and transformations.
 
 ### Example
 
 For example, the pipeline feature can be used to trim a string and make sure that it is an email that ends with a specific domain.
 
 ```ts
-import { email, endsWith, string, toTrimmed } from 'valibot'; // 0.6 kB
+import * as v from 'valibot';
 
-const EmailSchema = string([toTrimmed(), email(), endsWith('@example.com')]);
+const EmailSchema = v.pipe(
+  v.string(),
+  v.trim(),
+  v.email(),
+  v.endsWith('@example.com')
+);
 ```
 
 ## Validations
 
-Validation functions examine the input and, if the input does not meet a certain condition, return an issue. If the input is valid, it is returned as the output and, if present, picked up by the next function in the pipeline.
+Pipeline validation actions examine the input and, if the input does not meet a certain condition, return an issue. If the input is valid, it is returned as the output and, if present, picked up by the next action in the pipeline.
 
-> By default I run a pipeline completely, even if an error is thrown in between, to collect all issues. If you want me to abort the pipeline early after the first error is thrown, you have to set the `abortPipeEarly` option of <Link href="/api/parse">`parse`</Link>, <Link href="/api/parseAsync">`parseAsync`</Link>, <Link href="/api/safeParse">`safeParse`</Link> or <Link href="/api/safeParseAsync">`safeParseAsync`</Link> to `true`. Learn more <Link href="/guides/parse-data/#abort-early">here</Link>.
+> Whenever possible, pipelines are run completely, even if an issue has occurred, to collect all possible issues. If you want to abort the pipeline early after the first issue, you need to set the `abortPipeEarly` option to `true`. Learn more about this <Link href="/guides/parse-data/#configuration">here</Link>.
 
-### Example
+<ApiList
+  label="Validation actions"
+  items={[
+    'base64',
+    'bic',
+    'bytes',
+    'check',
+    'checkItems',
+    'creditCard',
+    'cuid2',
+    'decimal',
+    'digits',
+    'email',
+    'emoji',
+    'empty',
+    'endsWith',
+    'everyItem',
+    'excludes',
+    'finite',
+    'graphemes',
+    'gtValue',
+    'hash',
+    'hexadecimal',
+    'hexColor',
+    'includes',
+    'integer',
+    'ip',
+    'ipv4',
+    'ipv6',
+    'isoDate',
+    'isoDateTime',
+    'isoTime',
+    'isoTimeSecond',
+    'isoTimestamp',
+    'isoWeek',
+    'length',
+    'ltValue',
+    'mac',
+    'mac48',
+    'mac64',
+    'maxBytes',
+    'maxGraphemes',
+    'maxLength',
+    'maxSize',
+    'maxValue',
+    'maxWords',
+    'mimeType',
+    'minBytes',
+    'minGraphemes',
+    'minLength',
+    'minSize',
+    'minValue',
+    'minWords',
+    'multipleOf',
+    'nanoid',
+    'nonEmpty',
+    'notBytes',
+    'notGraphemes',
+    'notLength',
+    'notSize',
+    'notValue',
+    'notValues',
+    'notWords',
+    'octal',
+    'partialCheck',
+    'rawCheck',
+    'regex',
+    'rfcEmail',
+    'safeInteger',
+    'size',
+    'slug',
+    'someItem',
+    'startsWith',
+    'ulid',
+    'url',
+    'uuid',
+    'value',
+    'values',
+    'words',
+  ]}
+/>
 
-For example, a validation function that controls the length of a string might look like the following.
+Some of these actions can be combined with different schemas. For example, <Link href="/api/minValue/">`minValue`</Link> can be used to validate the minimum value of <Link href="/api/string/">`string`</Link>, <Link href="/api/number/">`number`</Link>, <Link href="/api/bigint/">`bigint`</Link>, and <Link href="/api/date/">`date`</Link>.
 
 ```ts
-import { getOutput, getPipeIssues, string } from 'valibot'; // 0.54 kB
+import * as v from 'valibot';
 
-const StringSchema = string([
-  (input) => {
-    if (input.length > 10) {
-      return getPipeIssues('custom', 'Invalid length', input);
-    }
-    return getOutput(input);
-  },
-]);
-```
-
-### Utility functions
-
-Since the code of a pipeline, as seen in the previous example, can quickly become confusing. I provide you with small utility functions that make your code more understandable and readable.
-
-Utility functions: <Link href="/api/bytes">`bytes`</Link>, <Link href="/api/cuid2">`cuid2`</Link>, <Link href="/api/custom">`custom`</Link>, <Link href="/api/customAsync">`customAsync`</Link> <Link href="/api/email">`email`</Link>, <Link href="/api/emoji">`emoji`</Link>, <Link href="/api/endsWith">`endsWith`</Link>, <Link href="/api/excludes">`excludes`</Link>, <Link href="/api/finite">`finite`</Link>, <Link href="/api/includes">`includes`</Link>, <Link href="/api/integer">`integer`</Link>, <Link href="/api/ip">`ip`</Link>, <Link href="/api/ipv4">`ipv4`</Link>, <Link href="/api/ipv6">`ipv6`</Link>, <Link href="/api/isoDate">`isoDate`</Link>, <Link href="/api/isoDateTime">`isoDateTime`</Link>, <Link href="/api/isoTime">`isoTime`</Link>, <Link href="/api/isoTimeSecond">`isoTimeSecond`</Link>, <Link href="/api/isoTimestamp">`isoTimestamp`</Link>, <Link href="/api/isoWeek">`isoWeek`</Link>, <Link href="/api/length">`length`</Link>, <Link href="/api/maxBytes">`maxBytes`</Link>, <Link href="/api/maxLength">`maxLength`</Link>, <Link href="/api/maxSize">`maxSize`</Link>, <Link href="/api/maxValue">`maxValue`</Link>, <Link href="/api/mimeType">`mimeType`</Link>, <Link href="/api/minBytes">`minBytes`</Link>, <Link href="/api/minLength">`minLength`</Link>, <Link href="/api/minSize">`minSize`</Link>, <Link href="/api/minValue">`minValue`</Link>, <Link href="/api/multipleOf">`multipleOf`</Link>, <Link href="/api/notBytes">`notBytes`</Link>, <Link href="/api/notLength">`notLength`</Link>, <Link href="/api/notSize">`notSize`</Link>, <Link href="/api/notValue">`notValue`</Link>, <Link href="/api/regex">`regex`</Link>, <Link href="/api/safeInteger">`safeInteger`</Link>, <Link href="/api/size">`size`</Link>, <Link href="/api/startsWith">`startsWith`</Link>, <Link href="/api/ulid">`ulid`</Link>, <Link href="/api/url">`url`</Link>, <Link href="/api/uuid">`uuid`</Link>, <Link href="/api/value">`value`</Link>
-
-Some of these utility functions can be used in the pipeline of different schema functions. For example, <Link href="/api/minValue">`minValue`</Link> can be used in the pipeline of <Link href="/api/string">`string`</Link>, <Link href="/api/number">`number`</Link>, <Link href="/api/bigint">`bigint`</Link> and <Link href="/api/date">`date`</Link>.
-
-```ts
-import { bigint, date, minValue, number, string } from 'valibot'; // 0.58 kB
-
-const StringSchema = string([minValue('2023-07-29')]);
-const NumberSchema = number([minValue(1234)]);
-const BigintSchema = bigint([minValue(1234n)]);
-const DateSchema = date([minValue(new Date())]);
+const StringSchema = v.pipe(v.string(), v.minValue('foo'));
+const NumberSchema = v.pipe(v.number(), v.minValue(1234));
+const BigintSchema = v.pipe(v.bigint(), v.minValue(1234n));
+const DateSchema = v.pipe(v.date(), v.minValue(new Date()));
 ```
 
 ### Custom validation
 
-For custom validations <Link href="/api/custom">`custom`</Link> or <Link href="/api/customAsync">`customAsync`</Link> can be used. If the function passed as the first argument returns a falsy value, an error is thrown. Otherwise the input is considered valid.
+For custom validations, <Link href="/api/check/">`check`</Link> can be used. If the function passed as the first argument returns `false`, an issue is returned. Otherwise, the input is considered valid.
 
 ```ts
-import { customAsync, stringAsync } from 'valibot'; // 0.5 kB
-import { isAvailableUsername } from '~/api';
+import * as v from 'valibot';
+import { isValidUsername } from '~/utils';
 
-const UsernameSchema = stringAsync([
-  customAsync(isAvailableUsername, 'This username is already taken.'),
-]);
+const UsernameSchema = v.pipe(
+  v.string(),
+  v.check(isValidUsername, 'This username is invalid.')
+);
 ```
+
+> You can forward the issues of a pipeline validation to a child. See the <Link href="/guides/methods/#forward">methods</Link> guide for more information.
 
 ## Transformations
 
-Transformation functions allow to change the value of an input, but not the data type. This can be useful for example to remove spaces at the beginning or end of a string or to force a minimum or maximum value.
+Pipeline transformation actions allow to change the value and data type of the input data. This can be useful for example to remove spaces at the beginning or end of a string or to force a minimum or maximum value.
 
-> If you also want to change the data type, you must explicitly use the <Link href="/api/transform">`transform`</Link> method.
+<ApiList
+  label="Transformation actions"
+  items={[
+    'brand',
+    'filterItems',
+    'findItem',
+    'mapItems',
+    'rawTransform',
+    'readonly',
+    'reduceItems',
+    'sortItems',
+    'toLowerCase',
+    'toMaxValue',
+    'toMinValue',
+    'toUpperCase',
+    'transform',
+    'trim',
+    'trimEnd',
+    'trimStart',
+  ]}
+/>
 
-### Example
-
-A transformation function that enforces a minimum value of a number could look like the following.
+For example, the pipeline of the following schema enforces a minimum value of 10. If the input is less than 10, it is replaced with the specified minimum value.
 
 ```ts
-import { getOutput, number } from 'valibot'; // 0.44 kB
+import * as v from 'valibot';
 
-const NumberSchema = number([(input) => getOutput(input > 10 ? input : 10)]);
+const NumberSchema = v.pipe(v.number(), v.toMinValue(10));
 ```
 
-### Utility functions
+### Custom transformation
 
-To make the code of a pipeline more readable, you can use the utility functions I provide for transformations.
-
-Utility functions: <Link href="/api/toCustom">`toCustom`</Link>, <Link href="/api/toCustomAsync">`toCustomAsync`</Link>, <Link href="/api/toLowerCase">`toLowerCase`</Link>, <Link href="/api/toMaxValue">`toMaxValue`</Link>, <Link href="/api/toMinValue">`toMinValue`</Link>, <Link href="/api/toTrimmed">`toTrimmed`</Link>, <Link href="/api/toTrimmedEnd">`toTrimmedEnd`</Link>, <Link href="/api/toTrimmedStart">`toTrimmedStart`</Link>, <Link href="/api/toUpperCase">`toUpperCase`</Link>
+For custom transformations, <Link href="/api/transform/">`transform`</Link> can be used. The function passed as the first argument is called with the input data and the return value defines the output. The following transformation changes the output of the schema to `null` for any number less than 10.
 
 ```ts
-import { number, toMinValue } from 'valibot'; // 0.47 kB
+import * as v from 'valibot';
 
-const NumberSchema = number([toMinValue(10)]);
+const NumberSchema = v.pipe(
+  v.number(),
+  v.transform((input) => (input < 10 ? null : input))
+);
+```
+
+## Metadata
+
+In addition to the validation and transformation actions, a pipeline can also be used to add metadata to a schema. This can be useful when working with AI tools or for documentation purposes.
+
+<ApiList
+  label="Metadata actions"
+  items={['description', 'metadata', 'title']}
+/>
+
+```ts
+const UsernameSchema = v.pipe(
+  v.string(),
+  v.regex(/^[a-z0-9_-]{4,16}$/iu),
+  v.title('Username'),
+  v.description(
+    'A username must be between 4 and 16 characters long and can only contain letters, numbers, underscores and hyphens.'
+  )
+);
 ```

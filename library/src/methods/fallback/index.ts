@@ -1,2 +1,2 @@
-export { fallback } from './fallback.ts';
-export { fallbackAsync } from './fallbackAsync.ts';
+export * from './fallback.ts';
+export * from './fallbackAsync.ts';

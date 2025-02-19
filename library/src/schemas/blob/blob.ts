@@ -1,77 +1,94 @@
-import type { BaseSchema, ErrorMessage, Pipe } from '../../types.ts';
-import {
-  executePipe,
-  getDefaultArgs,
-  getSchemaIssues,
-} from '../../utils/index.ts';
+import type {
+  BaseIssue,
+  BaseSchema,
+  ErrorMessage,
+  OutputDataset,
+} from '../../types/index.ts';
+import { _addIssue, _getStandardProps } from '../../utils/index.ts';
 
 /**
- * Blob schema type.
+ * Blob issue interface.
  */
-export type BlobSchema<TOutput = Blob> = BaseSchema<Blob, TOutput> & {
-  schema: 'blob';
-};
+export interface BlobIssue extends BaseIssue<unknown> {
+  /**
+   * The issue kind.
+   */
+  readonly kind: 'schema';
+  /**
+   * The issue type.
+   */
+  readonly type: 'blob';
+  /**
+   * The expected property.
+   */
+  readonly expected: 'Blob';
+}
+
+/**
+ * Blob schema interface.
+ */
+export interface BlobSchema<
+  TMessage extends ErrorMessage<BlobIssue> | undefined,
+> extends BaseSchema<Blob, Blob, BlobIssue> {
+  /**
+   * The schema type.
+   */
+  readonly type: 'blob';
+  /**
+   * The schema reference.
+   */
+  readonly reference: typeof blob;
+  /**
+   * The expected property.
+   */
+  readonly expects: 'Blob';
+  /**
+   * The error message.
+   */
+  readonly message: TMessage;
+}
 
 /**
  * Creates a blob schema.
  *
- * @param pipe A validation and transformation pipe.
- *
  * @returns A blob schema.
  */
-export function blob(pipe?: Pipe<Blob>): BlobSchema;
+export function blob(): BlobSchema<undefined>;
 
 /**
  * Creates a blob schema.
  *
- * @param error The error message.
- * @param pipe A validation and transformation pipe.
+ * @param message The error message.
  *
  * @returns A blob schema.
  */
-export function blob(error?: ErrorMessage, pipe?: Pipe<Blob>): BlobSchema;
+export function blob<
+  const TMessage extends ErrorMessage<BlobIssue> | undefined,
+>(message: TMessage): BlobSchema<TMessage>;
 
+// @__NO_SIDE_EFFECTS__
 export function blob(
-  arg1?: ErrorMessage | Pipe<Blob>,
-  arg2?: Pipe<Blob>
-): BlobSchema {
-  // Get error and pipe argument
-  const [error, pipe] = getDefaultArgs(arg1, arg2);
-
-  // Create and return blob schema
+  message?: ErrorMessage<BlobIssue>
+): BlobSchema<ErrorMessage<BlobIssue> | undefined> {
   return {
-    /**
-     * The schema type.
-     */
-    schema: 'blob',
-
-    /**
-     * Whether it's async.
-     */
+    kind: 'schema',
+    type: 'blob',
+    reference: blob,
+    expects: 'Blob',
     async: false,
-
-    /**
-     * Parses unknown input based on its schema.
-     *
-     * @param input The input to be parsed.
-     * @param info The parse info.
-     *
-     * @returns The parsed output.
-     */
-    _parse(input, info) {
-      // Check type of input
-      if (!(input instanceof Blob)) {
-        return getSchemaIssues(
-          info,
-          'type',
-          'blob',
-          error || 'Invalid type',
-          input
-        );
+    message,
+    get '~standard'() {
+      return _getStandardProps(this);
+    },
+    '~run'(dataset, config) {
+      if (dataset.value instanceof Blob) {
+        // @ts-expect-error
+        dataset.typed = true;
+      } else {
+        _addIssue(this, 'type', dataset, config);
       }
-
-      // Execute pipe and return result
-      return executePipe(input, pipe, info, 'blob');
+      // @ts-expect-error
+      return dataset as OutputDataset<Blob, BlobIssue>;
     },
   };
 }

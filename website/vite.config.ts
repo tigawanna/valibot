@@ -1,6 +1,6 @@
-import rehypePrism from '@mapbox/rehype-prism';
-import { qwikVite } from '@builder.io/qwik/optimizer';
 import { qwikCity } from '@builder.io/qwik-city/vite';
+import { qwikVite } from '@builder.io/qwik/optimizer';
+import rehypePrism from '@mapbox/rehype-prism';
 import rehypeExternalLinks from 'rehype-external-links';
 import { defineConfig } from 'vite';
 import tsconfigPaths from 'vite-tsconfig-paths';
@@ -15,7 +15,9 @@ export default defineConfig(() => {
           rehypeAutolinkHeadings: true,
         },
         mdx: {
+          providerImportSource: '~/hooks/useMDXComponents.tsx',
           rehypePlugins: [
+            // @ts-expect-error
             rehypePrism,
             [rehypeExternalLinks, { rel: 'noreferrer', target: '_blank' }],
           ],

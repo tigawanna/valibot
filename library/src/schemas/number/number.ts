@@ -1,77 +1,94 @@
-import type { BaseSchema, ErrorMessage, Pipe } from '../../types.ts';
-import {
-  executePipe,
-  getDefaultArgs,
-  getSchemaIssues,
-} from '../../utils/index.ts';
+import type {
+  BaseIssue,
+  BaseSchema,
+  ErrorMessage,
+  OutputDataset,
+} from '../../types/index.ts';
+import { _addIssue, _getStandardProps } from '../../utils/index.ts';
 
 /**
- * Number schema type.
+ * Number issue interface.
  */
-export type NumberSchema<TOutput = number> = BaseSchema<number, TOutput> & {
-  schema: 'number';
-};
+export interface NumberIssue extends BaseIssue<unknown> {
+  /**
+   * The issue kind.
+   */
+  readonly kind: 'schema';
+  /**
+   * The issue type.
+   */
+  readonly type: 'number';
+  /**
+   * The expected property.
+   */
+  readonly expected: 'number';
+}
+
+/**
+ * Number schema interface.
+ */
+export interface NumberSchema<
+  TMessage extends ErrorMessage<NumberIssue> | undefined,
+> extends BaseSchema<number, number, NumberIssue> {
+  /**
+   * The schema type.
+   */
+  readonly type: 'number';
+  /**
+   * The schema reference.
+   */
+  readonly reference: typeof number;
+  /**
+   * The expected property.
+   */
+  readonly expects: 'number';
+  /**
+   * The error message.
+   */
+  readonly message: TMessage;
+}
 
 /**
  * Creates a number schema.
  *
- * @param pipe A validation and transformation pipe.
- *
  * @returns A number schema.
  */
-export function number(pipe?: Pipe<number>): NumberSchema;
+export function number(): NumberSchema<undefined>;
 
 /**
  * Creates a number schema.
  *
- * @param error The error message.
- * @param pipe A validation and transformation pipe.
+ * @param message The error message.
  *
  * @returns A number schema.
  */
-export function number(error?: ErrorMessage, pipe?: Pipe<number>): NumberSchema;
+export function number<
+  const TMessage extends ErrorMessage<NumberIssue> | undefined,
+>(message: TMessage): NumberSchema<TMessage>;
 
+// @__NO_SIDE_EFFECTS__
 export function number(
-  arg1?: ErrorMessage | Pipe<number>,
-  arg2?: Pipe<number>
-): NumberSchema {
-  // Get error and pipe argument
-  const [error, pipe] = getDefaultArgs(arg1, arg2);
-
-  // Create and return number schema
+  message?: ErrorMessage<NumberIssue>
+): NumberSchema<ErrorMessage<NumberIssue> | undefined> {
   return {
-    /**
-     * The schema type.
-     */
-    schema: 'number',
-
-    /**
-     * Whether it's async.
-     */
+    kind: 'schema',
+    type: 'number',
+    reference: number,
+    expects: 'number',
     async: false,
-
-    /**
-     * Parses unknown input based on its schema.
-     *
-     * @param input The input to be parsed.
-     * @param info The parse info.
-     *
-     * @returns The parsed output.
-     */
-    _parse(input, info) {
-      // Check type of input
-      if (typeof input !== 'number' || isNaN(input)) {
-        return getSchemaIssues(
-          info,
-          'type',
-          'number',
-          error || 'Invalid type',
-          input
-        );
+    message,
+    get '~standard'() {
+      return _getStandardProps(this);
+    },
+    '~run'(dataset, config) {
+      if (typeof dataset.value === 'number' && !isNaN(dataset.value)) {
+        // @ts-expect-error
+        dataset.typed = true;
+      } else {
+        _addIssue(this, 'type', dataset, config);
       }
-
-      // Execute pipe and return result
-      return executePipe(input, pipe, info, 'number');
+      // @ts-expect-error
+      return dataset as OutputDataset<number, NumberIssue>;
     },
   };
 }

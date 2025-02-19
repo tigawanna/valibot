@@ -1,28 +1,46 @@
-import type { ValiError } from '../../error/index.ts';
 import type {
+  BaseIssue,
   BaseSchema,
   BaseSchemaAsync,
-  Issues,
-  Output,
-} from '../../types.ts';
+  InferIssue,
+  InferOutput,
+} from '../../types/index.ts';
 
 /**
  * Safe parse result type.
  */
-export type SafeParseResult<TSchema extends BaseSchema | BaseSchemaAsync> =
+export type SafeParseResult<
+  TSchema extends
+    | BaseSchema<unknown, unknown, BaseIssue<unknown>>
+    | BaseSchemaAsync<unknown, unknown, BaseIssue<unknown>>,
+> =
   | {
-      success: true;
       /**
-       * @deprecated Please use `.output` instead.
+       * Whether is's typed.
        */
-      data: Output<TSchema>;
-      output: Output<TSchema>;
+      readonly typed: true;
+      /**
+       * Whether it's successful.
+       */
+      readonly success: true;
+      /**
+       * The output value.
+       */
+      readonly output: InferOutput<TSchema>;
+      /**
+       * The issues if any.
+       */
+      readonly issues: undefined;
     }
   | {
-      success: false;
-      /**
-       * @deprecated Please use `.issues` instead.
-       */
-      error: ValiError;
-      issues: Issues;
+      readonly typed: true;
+      readonly success: false;
+      readonly output: InferOutput<TSchema>;
+      readonly issues: [InferIssue<TSchema>, ...InferIssue<TSchema>[]];
+    }
+  | {
+      readonly typed: false;
+      readonly success: false;
+      readonly output: unknown;
+      readonly issues: [InferIssue<TSchema>, ...InferIssue<TSchema>[]];
     };
