@@ -6,18 +6,13 @@ import {
   useSignal,
   useTask$,
 } from '@builder.io/qwik';
-import {
-  globalAction$,
-  Link,
-  useLocation,
-  z,
-  zod$,
-} from '@builder.io/qwik-city';
+import { globalAction$, useLocation, z, zod$ } from '@builder.io/qwik-city';
 import clsx from 'clsx';
 import { useFocusTrap } from '~/hooks';
 import { LogoIcon } from '~/icons';
 import { DiscordIconLink } from './DiscordIconLink';
 import { GitHubIconLink } from './GitHubIconLink';
+import { Link } from './Link';
 import { MainMenuToggle } from './MainMenuToggle';
 import { SearchToggle } from './SearchToggle';
 import { ThemeToggle } from './ThemeToggle';
@@ -98,7 +93,6 @@ export const Header = component$<HeaderProps>(({ searchOpen }) => {
           <Link
             class="focus-ring inline-flex w-full items-center rounded-lg p-2 font-medium transition-colors select-none hover:text-slate-900 md:w-auto md:text-lg lg:text-xl dark:hover:text-slate-200"
             href="/"
-            prefetch={false}
             preventdefault:contextmenu
             onContextMenu$={() =>
               window.open(
@@ -152,7 +146,6 @@ export const Header = component$<HeaderProps>(({ searchOpen }) => {
                   'docsearch-lvl0 text-slate-900 dark:text-slate-200'
               )}
               href={href}
-              prefetch={false}
             >
               {label}
             </Link>

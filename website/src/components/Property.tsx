@@ -1,6 +1,6 @@
 import { component$, Fragment } from '@builder.io/qwik';
-import { Link } from '@builder.io/qwik-city';
 import clsx from 'clsx';
+import { Link } from './Link';
 
 type DefinitionData =
   | 'string'
@@ -360,7 +360,6 @@ const Definition = component$<DefinitionProps>(({ parent, data }) => (
                 data.name[0] !== data.name[0].toUpperCase(),
             }}
             href={data.href}
-            prefetch={false}
           >
             {data.name}
           </Link>

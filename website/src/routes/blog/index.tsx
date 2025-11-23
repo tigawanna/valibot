@@ -2,10 +2,9 @@ import { component$ } from '@builder.io/qwik';
 import {
   type DocumentHead,
   type DocumentHeadValue,
-  Link,
   routeLoader$,
 } from '@builder.io/qwik-city';
-import { PostCover, PostMeta } from '~/components';
+import { Link, PostCover, PostMeta } from '~/components';
 
 export const head: DocumentHead = {
   title: 'Blog',

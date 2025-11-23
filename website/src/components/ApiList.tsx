@@ -1,5 +1,5 @@
 import { component$ } from '@builder.io/qwik';
-import { Link } from '@builder.io/qwik-city';
+import { Link } from './Link';
 
 type ApiListProps = {
   label?: string;
@@ -14,7 +14,7 @@ export const ApiList = component$<ApiListProps>(({ label, items }) => (
     {label && label + ': '}
     {items.map((item, index) => (
       <li key={item} class="p-0!">
-        <Link href={`/api/${item}/`} prefetch={false}>
+        <Link href={`/api/${item}/`}>
           <code>{item}</code>
         </Link>
         {index < items.length - 1 && ','}

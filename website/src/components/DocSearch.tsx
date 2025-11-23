@@ -7,7 +7,7 @@ import {
   useSignal,
   useTask$,
 } from '@builder.io/qwik';
-import { Link, useLocation, useNavigate } from '@builder.io/qwik-city';
+import { useLocation, useNavigate } from '@builder.io/qwik-city';
 import { isBrowser } from '@builder.io/qwik/build';
 import clsx from 'clsx';
 import { useFocusTrap, useStorageSignal } from '~/hooks';
@@ -20,6 +20,7 @@ import {
 } from '~/icons';
 import { AlgoliaLogo } from '~/logos';
 import { trackEvent } from '~/utils';
+import { Link } from './Link';
 import { SystemIcon } from './SystemIcon';
 import { TextLink } from './TextLink';
 
@@ -543,7 +544,6 @@ const SearchItem = component$<SearchItemProps>(
         )}
         ref={element}
         href={path}
-        prefetch={false}
         onMouseEnter$={() => (activeIndex.value = index)}
         onFocusIn$={() => (activeIndex.value = index)}
         // eslint-disable-next-line qwik/valid-lexical-scope

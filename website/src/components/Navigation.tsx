@@ -6,11 +6,11 @@ import {
 } from '@builder.io/qwik';
 import {
   type ContentMenu,
-  Link,
   useContent,
   useLocation,
 } from '@builder.io/qwik-city';
 import clsx from 'clsx';
+import { Link } from './Link';
 
 type NavigationProps = {
   class?: string;
@@ -137,7 +137,6 @@ const NavItem = component$<NavItemProps>(({ navElement, text, items }) => {
                     : 'hover:text-slate-800 dark:hover:text-slate-300'
                 )}
                 href={href}
-                prefetch={false}
               >
                 {text}
               </Link>
