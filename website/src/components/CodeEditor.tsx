@@ -12,6 +12,7 @@ import {
   useVisibleTask$,
 } from '@builder.io/qwik';
 import { isBrowser } from '@builder.io/qwik/build';
+import clsx from 'clsx';
 import * as monaco from 'monaco-editor';
 import { wireTmGrammars } from 'monaco-editor-textmate';
 import editorWorker from 'monaco-editor/esm/vs/editor/editor.worker?worker';
@@ -24,20 +25,23 @@ import prettierPluginTypeScript from 'prettier/plugins/typescript';
 import { formatWithCursor } from 'prettier/standalone';
 import { useTheme } from '~/routes/plugin@theme';
 import valibotTypes from '../../../library/dist/index.d.ts?raw';
-import packageJson from '../../../library/package.json?raw';
+import valibotPackageJson from '../../../library/package.json?raw';
+import valibotToJsonSchemaTypes from '../../../packages/to-json-schema/dist/index.d.ts?raw';
+import valibotToJsonSchemaPackageJson from '../../../packages/to-json-schema/package.json?raw';
 import typescriptTm from '../json/TypeScript.tmLanguage.json';
 
 type CodeEditorProps = {
+  class: string;
   value: Signal<string>;
   model: Signal<NoSerialize<monaco.editor.ITextModel>>;
-  onSave$: QRL<() => void>;
+  onSave$?: QRL<() => void>;
 };
 
 /**
  * Monaco code editor with TypeScript support and syntax highlighting.
  */
 export const CodeEditor = component$<CodeEditorProps>(
-  ({ value, model, onSave$ }) => {
+  ({ value, model, onSave$, ...props }) => {
     // Use theme
     const theme = useTheme();
 
@@ -157,7 +161,7 @@ export const CodeEditor = component$<CodeEditorProps>(
         }
 
         // Execute save event
-        onSave$();
+        onSave$?.();
       }
     });
 
@@ -172,7 +176,7 @@ export const CodeEditor = component$<CodeEditorProps>(
 
     return (
       <div
-        class="w-full lg:rounded-3xl lg:border-[3px] lg:border-slate-200 lg:dark:border-slate-800"
+        class={clsx('w-full', props.class)}
         ref={element}
         window:onResize$={updateDeviceOptions}
         onKeyDown$={[preventDefault, handleKeyDown]}
@@ -400,12 +404,22 @@ async function setupMonaco() {
 
   // Add Valibot to context of editor
   monaco.languages.typescript.typescriptDefaults.addExtraLib(
-    packageJson,
+    valibotPackageJson,
     'file:///node_modules/valibot/package.json'
   );
   monaco.languages.typescript.typescriptDefaults.addExtraLib(
     valibotTypes,
     'file:///node_modules/valibot/dist/index.d.ts'
+  );
+
+  // Add to-json-schema to context of editor
+  monaco.languages.typescript.typescriptDefaults.addExtraLib(
+    valibotToJsonSchemaPackageJson,
+    'file:///node_modules/@valibot/to-json-schema/package.json'
+  );
+  monaco.languages.typescript.typescriptDefaults.addExtraLib(
+    valibotToJsonSchemaTypes,
+    'file:///node_modules/@valibot/to-json-schema/dist/index.d.ts'
   );
 
   // Set TypeScript compiler options

@@ -4,6 +4,8 @@ export * from './BuilderLogo';
 export * from './DailyDevLogo';
 export * from './DigitalOceanLogo';
 export * from './HdmLogo';
+export * from './LambdaTestLogo';
+export * from './MotionLogo';
 export * from './NetlifyLogo';
 export * from './PaceLogo';
 export * from './StainlessLogo';

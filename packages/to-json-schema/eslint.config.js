@@ -5,6 +5,7 @@ import pluginSecurity from 'eslint-plugin-security';
 import tseslint from 'typescript-eslint';
 
 export default tseslint.config(
+  { ignores: ['eslint.config.js'] },
   eslint.configs.recommended,
   tseslint.configs.strict,
   tseslint.configs.stylistic,
@@ -49,6 +50,12 @@ export default tseslint.config(
           require: {
             FunctionDeclaration: false,
           },
+        },
+      ],
+      'jsdoc/check-tag-names': [
+        'error',
+        {
+          definedTags: ['alpha', 'beta'],
         },
       ],
 

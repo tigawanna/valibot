@@ -7,6 +7,7 @@ import pluginSecurity from 'eslint-plugin-security';
 import tseslint from 'typescript-eslint';
 
 export default tseslint.config(
+  { ignores: ['eslint.config.js'] },
   eslint.configs.recommended,
   tseslint.configs.strict,
   tseslint.configs.stylistic,
@@ -17,6 +18,12 @@ export default tseslint.config(
     files: ['src/**/*.ts'],
     extends: [importPlugin.flatConfigs.recommended],
     plugins: { jsdoc, 'redos-detector': redosDetector },
+    languageOptions: {
+      parserOptions: {
+        projectService: true,
+        tsconfigRootDir: import.meta.dirname,
+      },
+    },
     rules: {
       // Enable rules -----------------------------------------------------------
 
