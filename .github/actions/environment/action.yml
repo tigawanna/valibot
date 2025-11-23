@@ -51,3 +51,16 @@ runs:
       shell: bash
       run: pnpm build
       working-directory: packages/to-json-schema
+
+    - name: Create zod-to-valibot build cache
+      id: zod-to-valibot-build-cache
+      uses: actions/cache@v4
+      with:
+        path: ${{ github.workspace }}/codemod/zod-to-valibot/dist
+        key: zod-to-valibot-build-cache-${{ hashFiles('codemod/zod-to-valibot/src/**/*.ts', '!codemod/zod-to-valibot/src/**/*.test.ts') }}
+
+    - name: Build zod-to-valibot
+      if: steps.zod-to-valibot-build-cache.outputs.cache-hit != 'true'
+      shell: bash
+      run: pnpm build
+      working-directory: codemod/zod-to-valibot
