@@ -5,12 +5,6 @@ export const properties: Record<string, PropertyProps> = {
     modifier: 'extends',
     type: 'any',
   },
-  kind: {
-    type: {
-      type: 'string',
-      value: 'metadata',
-    },
-  },
   label: {
     type: {
       type: 'union',
@@ -42,12 +36,12 @@ export const properties: Record<string, PropertyProps> = {
         {
           type: 'custom',
           name: 'ErrorMessage',
-          href: '../../ErrorMessage/',
+          href: '../ErrorMessage/',
           generics: [
             {
               type: 'custom',
-              name: 'RawTransformIssue',
-              href: '../../RawTransformIssue/',
+              name: 'RawCheckIssue',
+              href: '../RawCheckIssue/',
               generics: [
                 {
                   type: 'custom',
@@ -71,16 +65,16 @@ export const properties: Record<string, PropertyProps> = {
             {
               type: 'custom',
               name: 'IssuePathItem',
-              href: '../../IssuePathItem/',
+              href: '../IssuePathItem/',
             },
             {
               type: 'array',
+              spread: true,
               item: {
                 type: 'custom',
                 name: 'IssuePathItem',
-                href: '../../IssuePathItem/',
+                href: '../IssuePathItem/',
               },
-              spread: true,
             },
           ],
         },
