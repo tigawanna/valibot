@@ -5,7 +5,7 @@ export const properties: Record<string, PropertyProps> = {
     modifier: 'extends',
     type: 'any',
   },
-  AddIssue: {
+  RawTransformAddIssue: {
     type: {
       type: 'function',
       params: [
@@ -14,8 +14,8 @@ export const properties: Record<string, PropertyProps> = {
           optional: true,
           type: {
             type: 'custom',
-            name: 'IssueInfo',
-            href: '../IssueInfo/',
+            name: 'RawTransformIssueInfo',
+            href: '../RawTransformIssueInfo/',
             generics: [
               {
                 type: 'custom',

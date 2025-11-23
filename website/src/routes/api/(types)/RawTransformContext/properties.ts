@@ -9,7 +9,7 @@ export const properties: Record<string, PropertyProps> = {
     type: {
       type: 'custom',
       name: 'SuccessDataset',
-      href: '../../SuccessDataset/',
+      href: '../SuccessDataset/',
       generics: [
         {
           type: 'custom',
@@ -22,12 +22,12 @@ export const properties: Record<string, PropertyProps> = {
     type: {
       type: 'custom',
       name: 'Config',
-      href: '../../Config/',
+      href: '../Config/',
       generics: [
         {
           type: 'custom',
           name: 'RawTransformIssue',
-          href: '../../RawTransformIssue/',
+          href: '../RawTransformIssue/',
           generics: [
             {
               type: 'custom',
@@ -41,8 +41,8 @@ export const properties: Record<string, PropertyProps> = {
   addIssue: {
     type: {
       type: 'custom',
-      name: 'AddIssue',
-      href: '../AddIssue/',
+      name: 'RawTransformAddIssue',
+      href: '../RawTransformAddIssue/',
       generics: [
         {
           type: 'custom',
