@@ -6,6 +6,7 @@ All notable changes to the library will be documented in this file.
 
 - Add support for `examples` action
 - Fix conversion of `exactOptional` object properties (pull request #1220)
+- Fix conversion of `variant` to use `oneOf` instead of `anyOf` (pull request #1193)
 
 ## v1.3.0 (June 01, 2025)
 
