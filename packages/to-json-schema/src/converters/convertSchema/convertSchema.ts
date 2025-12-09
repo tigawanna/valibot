@@ -185,6 +185,11 @@ export function convertSchema(
                 item.type === 'raw_transform' ||
                 item.type === 'reduce_items' ||
                 item.type === 'stringify_json' ||
+                item.type === 'to_bigint' ||
+                item.type === 'to_boolean' ||
+                item.type === 'to_date' ||
+                item.type === 'to_number' ||
+                item.type === 'to_string' ||
                 item.type === 'transform'))
         );
       if (inputStopIndex !== -1) {
