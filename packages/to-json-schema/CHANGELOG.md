@@ -2,7 +2,7 @@
 
 All notable changes to the library will be documented in this file.
 
-## vX.X.X (Month DD, YYYY)
+## v1.5.0 (December 11, 2025)
 
 - Add support for JSON Schema draft-2020-12 and OpenAPI 3.0 Schema Object format
 - Add `propertyNames` support to record schemas for key validation constraints

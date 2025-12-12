@@ -1,7 +1,7 @@
 {
   "name": "@valibot/to-json-schema",
   "description": "The official JSON schema converter for Valibot",
-  "version": "1.4.0",
+  "version": "1.5.0",
   "license": "MIT",
   "author": "Fabian Hiller",
   "homepage": "https://valibot.dev",
