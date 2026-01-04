@@ -60,7 +60,7 @@ const LoginSchema = z.object({
 });
 ```
 
-Zod v4 also introduces Zod Mini, a tree-shakable, functional variant aimed at reducing bundle size. For the same login form, Zod Mini requires approximately [6.88 kB with esbuild](https://bundlejs.com/?q=zod%2Fmini&treeshake=%5B%7B+check%2Cemail%2CminLength%2Cobject%2Cstring+%7D%5D) and 3.94 kB with Rolldown, still about 3 to 5x larger than Valibot's [1.37 kB](https://bundlejs.com/?q=valibot&treeshake=%5B%7B+email%2CminLength%2CnonEmpty%2Cobject%2Cstring%2Cpipe+%7D%5D), representing a ~75 % reduction when using Valibot over Zod Mini.
+Zod v4 also introduces Zod Mini, a tree-shakable, functional variant aimed at reducing bundle size. For the same login form, Zod Mini requires approximately [6.88 kB with esbuild](https://bundlejs.com/?q=zod%2Fmini&treeshake=%5B%7B+check%2Cemail%2CminLength%2Cobject%2Cstring+%7D%5D) and 3.94 kB with Rolldown, still about 3 to 5x larger than Valibot's [1.37 kB](https://bundlejs.com/?q=valibot&treeshake=%5B%7B+email%2CminLength%2CnonEmpty%2Cobject%2Cstring%2Cpipe+%7D%5D), representing a ~73 % reduction when using Valibot over Zod Mini.
 
 {/* prettier-ignore */}
 ```ts
