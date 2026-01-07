@@ -29,6 +29,8 @@ import { IconButton } from './IconButton';
 import { Navigation } from './Navigation';
 import { SideBar, useSideBarToggle } from './SideBar';
 
+const MDX_PATH_REGEX = /^\/(?:[\w-]+\/){2}$/;
+
 type NavItem = ContentMenu & { group: string };
 
 /**
@@ -78,11 +80,11 @@ export const DocsLayout = component$(() => {
     chaptersToggle.isRunning ? !chapters.value : chapters.value
   );
 
-  // Compute Markdown path from current location; skip on '/api/'
-  const mdPath = useComputed$(() =>
-    location.url.pathname === '/api/'
-      ? undefined
-      : `${location.url.pathname.replace(/\/$/, '')}.md`
+  // Compute Markdown path from current location
+  const markdownPath = useComputed$(() =>
+    MDX_PATH_REGEX.test(location.url.pathname)
+      ? `${location.url.pathname.replace(/\/$/, '')}.md`
+      : undefined
   );
 
   return (
@@ -100,7 +102,7 @@ export const DocsLayout = component$(() => {
           <NavButtons
             pageIndex={navIndex.value}
             sourcePath={documentHead.frontmatter.source}
-            mdPath={mdPath.value}
+            markdownPath={markdownPath.value}
             prevPage={prevPage.value}
             nextPage={nextPage.value}
           />
@@ -129,7 +131,7 @@ export const DocsLayout = component$(() => {
           <NavButtons
             pageIndex={navIndex.value}
             sourcePath={documentHead.frontmatter.source}
-            mdPath={mdPath.value}
+            markdownPath={markdownPath.value}
             prevPage={prevPage.value}
             nextPage={nextPage.value}
             chapters={chapters}
@@ -193,7 +195,7 @@ export const DocsLayout = component$(() => {
 type NavButtonsProps = {
   pageIndex: number;
   sourcePath: string | undefined;
-  mdPath: string | undefined;
+  markdownPath: string | undefined;
   prevPage: ContentMenu | undefined;
   nextPage: ContentMenu | undefined;
   chapters?: ReadonlySignal<boolean>;
@@ -207,7 +209,7 @@ export const NavButtons = component$<NavButtonsProps>(
   ({
     pageIndex,
     sourcePath,
-    mdPath,
+    markdownPath,
     prevPage,
     nextPage,
     chapters,
@@ -274,11 +276,12 @@ export const NavButtons = component$<NavButtonsProps>(
           <GitHubIcon class="h-[18px]" />
         </IconButton>
       )}
-      {mdPath && (
+      {markdownPath && (
         <IconButton
           variant="secondary"
           type="link"
-          href={mdPath}
+          href={markdownPath}
+          target="_blank"
           label="View as Markdown"
           hideLabel
         >
