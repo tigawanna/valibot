@@ -1,3 +1,8 @@
+---
+name: repo-website-api-create
+description: Create new API reference pages for the Valibot website at website/src/routes/api/. Use when adding documentation for new schemas, actions, methods, or types. Covers reading source code, creating properties.ts and index.mdx files, updating menu.md, and cross-referencing related APIs.
+---
+
 # Adding API Documentation to Website
 
 Guide for creating new API reference pages at `website/src/routes/api/`.
@@ -256,7 +261,7 @@ Existing API pages have a `## Related` section with `<ApiList>` components. When
 **Rule:** An API is "related" if:
 
 - It makes sense to use it as an argument of the other API, or vice versa
-- It make sense to use them together in the same `pipe` (e.g., `v.pipe(v.string(), v.email())` → `string` and `email` are related)
+- It makes sense to use them together in the same `pipe` (e.g., `v.pipe(v.string(), v.email())` → `string` and `email` are related)
 
 Examples:
 

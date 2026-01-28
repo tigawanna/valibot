@@ -1,3 +1,8 @@
+---
+name: repo-website-guide-create
+description: Create conceptual documentation and tutorial pages for the Valibot website at website/src/routes/guides/. Use when adding guides about schemas, pipelines, async validation, migration, or other topics. Covers directory structure, MDX templates, frontmatter, and content guidelines.
+---
+
 # Adding Guides to Website
 
 Guide for creating conceptual documentation at `website/src/routes/guides/`.

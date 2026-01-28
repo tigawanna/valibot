@@ -1,3 +1,8 @@
+---
+name: repo-source-code-review
+description: Review pull requests and source code changes in /library/src/. Use when reviewing PRs, validating implementation patterns, or checking code quality before merging. Covers code quality checks, type safety, documentation review, test coverage, and common issues to watch for.
+---
+
 # Reviewing Source Code Changes
 
 Guide for reviewing PRs and source code changes in `/library/src/`.
@@ -91,7 +96,7 @@ export function minLength<
 | Unwrap methods | `Unwraps ...`                                  |
 | Other methods  | `Creates a ...`, `Returns ...`, `Forwards ...` |
 
-See [document-source-code.md](./document-source-code.md) for full documentation rules.
+See `repo-source-code-document` skill for full documentation rules.
 
 ### Tests
 
@@ -123,7 +128,7 @@ See [document-source-code.md](./document-source-code.md) for full documentation 
 - [ ] Type tests in `.test-d.ts`
 - [ ] Naming conventions followed
 
-## Related Guides
+## Related Skills
 
-- [repository-structure.md](./repository-structure.md) — Navigate the codebase
-- [document-source-code.md](./document-source-code.md) — JSDoc requirements
+- `repo-structure-navigate` — Navigate the codebase
+- `repo-source-code-document` — JSDoc requirements

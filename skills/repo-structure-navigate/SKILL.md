@@ -1,3 +1,8 @@
+---
+name: repo-structure-navigate
+description: Navigate the Valibot repository structure. Use when looking for files, understanding the codebase layout, finding schema/action/method implementations, locating tests, API docs, or guide pages. Covers monorepo layout, library architecture, file naming conventions, and quick lookups.
+---
+
 # Valibot Repository Structure
 
 ## Monorepo Layout
@@ -13,7 +18,8 @@ valibot/
 │   └── zod-to-valibot/      # Zod converter
 ├── website/          # valibot.dev (Qwik + Vite)
 ├── brand/            # Brand assets
-└── prompts/          # AI agent guides
+├── skills/           # Agent skills (this folder)
+└── prompts/          # Legacy AI agent guides
 ```
 
 ## Core Library (`/library/src/`)

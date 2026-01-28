@@ -1,8 +1,13 @@
+---
+name: repo-website-api-update
+description: Update existing API documentation pages after source code changes. Use when syncing docs with library changes like new parameters, type constraint changes, interface updates, or function renames. Covers common change patterns and verification steps.
+---
+
 # Updating API Documentation
 
 Guide for syncing API docs with source code changes.
 
-**Prerequisite:** Read [add-new-api-to-website.md](./add-new-api-to-website.md) for `properties.ts` and `index.mdx` patterns.
+**Prerequisite:** Read the `repo-website-api-create` skill for `properties.ts` and `index.mdx` patterns.
 
 ## When to Update
 

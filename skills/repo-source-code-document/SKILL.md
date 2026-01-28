@@ -1,3 +1,8 @@
+---
+name: repo-source-code-document
+description: Write JSDoc comments and inline documentation for Valibot library source code in /library/src/. Use when documenting schemas, actions, methods, or utilities. Covers interface documentation, function overloads, purity annotations, inline comment patterns, and terminology consistency.
+---
+
 # Valibot Source Code Documentation
 
 Documentation patterns for library source code in `/library/src/`.
@@ -82,10 +87,11 @@ Add hints after the main description, before `@param`:
 
 Link to external resources when relevant using markdown format:
 
-````typescript
+```typescript
 /**
  * Creates an [email](https://en.wikipedia.org/wiki/Email_address) validation action.
  */
+```
 
 ### Implementation Function
 
@@ -96,9 +102,11 @@ The implementation has **NO JSDoc** but uses `// @__NO_SIDE_EFFECTS__`:
 export function string(
   message?: ErrorMessage<StringIssue>
 ): StringSchema<ErrorMessage<StringIssue> | undefined> {
-  return { /* ... */ };
+  return {
+    /* ... */
+  };
 }
-````
+```
 
 **`// @__NO_SIDE_EFFECTS__` rules:**
 
