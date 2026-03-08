@@ -116,6 +116,7 @@ describe('creditCard', () => {
       expectNoActionIssue(action, [
         '4000 0025 0000 1001',
         '5555 5525 0000 1001',
+        '4007 000 000 027',
       ]);
     });
 
@@ -123,6 +124,7 @@ describe('creditCard', () => {
       expectNoActionIssue(action, [
         '4000-0503-6000-0001',
         '5555-0503-6000-0080',
+        '4007-000-000-027',
       ]);
     });
   });
