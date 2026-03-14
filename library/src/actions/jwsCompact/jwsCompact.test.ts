@@ -79,6 +79,10 @@ describe('jwsCompact', () => {
         'abcd.efgh.',
       ]);
     });
+
+    test('for empty payload segments', () => {
+      expectNoActionIssue(action, ['abcd..ijkl', 'abcdef..']);
+    });
   });
 
   describe('should return dataset with issues', () => {
