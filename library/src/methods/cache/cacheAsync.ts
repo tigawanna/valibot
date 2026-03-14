@@ -109,10 +109,9 @@ export function cacheAsync(
   | BaseSchemaAsync<unknown, unknown, BaseIssue<unknown>>,
   CacheConfig | undefined
 > {
-  const pending = new Map<
-    unknown,
-    Promise<OutputDataset<unknown, BaseIssue<unknown>>>
-  >();
+  let activeRuns:
+    | Map<string, Promise<OutputDataset<unknown, BaseIssue<unknown>>>>
+    | undefined;
   return {
     ...schema,
     async: true,
@@ -122,18 +121,19 @@ export function cacheAsync(
       return _getStandardProps(this);
     },
     async '~run'(dataset, runConfig) {
-      // Key to access cache and pending map
-      const key = dataset.value;
+      // Create cache key based on input and config
+      const key = this.cache.key(dataset.value, runConfig);
 
       // Check and return cached output if exists
       const cached = this.cache.get(key);
       if (cached) return cached;
 
-      // If not cached, check if key is pending
-      let promise = pending.get(key);
+      // If not cached, check if a matching run is already in progress
+      let promise = activeRuns?.get(key);
       if (!promise) {
+        activeRuns ??= new Map();
         promise = Promise.resolve(schema['~run'](dataset, runConfig));
-        pending.set(key, promise);
+        activeRuns.set(key, promise);
       }
 
       // Await pending promise, cache output and return
@@ -142,9 +142,9 @@ export function cacheAsync(
         this.cache.set(key, outputDataset);
         return outputDataset;
 
-        // Cleanup pending map
+        // Cleanup active runs map
       } finally {
-        pending.delete(key);
+        activeRuns?.delete(key);
       }
     },
   };

@@ -71,10 +71,11 @@ export function cache(
       return _getStandardProps(this);
     },
     '~run'(dataset, runConfig) {
-      let outputDataset = this.cache.get(dataset.value);
+      const key = this.cache.key(dataset.value, runConfig);
+      let outputDataset = this.cache.get(key);
       if (!outputDataset) {
         this.cache.set(
-          dataset.value,
+          key,
           (outputDataset = schema['~run'](dataset, runConfig))
         );
       }

@@ -13,6 +13,11 @@ export const properties: Record<string, PropertyProps> = {
           name: 'key',
           type: 'unknown',
         },
+        {
+          name: 'configKey',
+          optional: true,
+          type: 'string',
+        },
       ],
       return: {
         type: 'union',
@@ -40,6 +45,11 @@ export const properties: Record<string, PropertyProps> = {
             type: 'custom',
             name: 'TValue',
           },
+        },
+        {
+          name: 'configKey',
+          optional: true,
+          type: 'string',
         },
       ],
       return: 'void',

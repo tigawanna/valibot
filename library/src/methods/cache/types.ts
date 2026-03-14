@@ -1,15 +1,21 @@
+import type { BaseIssue, Config } from '../../types/index.ts';
+
 /**
  * Cache interface type.
  */
 export interface Cache<TValue> {
   /**
+   * Creates a cache key from input and config.
+   */
+  key(input: unknown, config?: Config<BaseIssue<unknown>>): string;
+  /**
    * Gets a value from the cache by key.
    */
-  get(key: unknown): TValue | undefined;
+  get(key: string): TValue | undefined;
   /**
    * Sets a value in the cache by key.
    */
-  set(key: unknown, value: TValue): void;
+  set(key: string, value: TValue): void;
   /**
    * Clears all entries from the cache.
    */

@@ -1,3 +1,4 @@
+import type { BaseIssue, Config } from '../../index.ts';
 import type { Cache, CacheConfig } from './types.ts';
 
 /**
@@ -5,7 +6,13 @@ import type { Cache, CacheConfig } from './types.ts';
  */
 class _LruCache<TValue> implements Cache<TValue> {
   // Stores [value, timestamp] tuples to avoid object allocation overhead
-  private readonly store = new Map<unknown, [TValue, number]>();
+  private store: Map<string, [TValue, number]> | undefined;
+
+  // Assign stable IDs to references
+  private refIds: WeakMap<WeakKey, number> | undefined;
+
+  // Counter for tracking references
+  private refCount = 0;
 
   // Cache configuration
   private readonly maxSize: number;
@@ -18,7 +25,68 @@ class _LruCache<TValue> implements Cache<TValue> {
     this.hasMaxAge = isFinite(this.maxAge);
   }
 
-  get(key: unknown): TValue | undefined {
+  /**
+   * Stringifies an unknown input to a cache key component.
+   *
+   * @param input The unknown input.
+   *
+   * @returns A cache key component.
+   */
+  #stringify(input: unknown): string {
+    const type = typeof input;
+    if (type === 'string') {
+      return `"${input}"`;
+    }
+    if (type === 'number' || type === 'boolean') {
+      return `${input}`;
+    }
+    if (type === 'bigint') {
+      return `${input}n`;
+    }
+    if (type === 'object' || type === 'function') {
+      if (input) {
+        this.refIds ??= new WeakMap();
+        let id = this.refIds.get(input as WeakKey);
+        if (!id) {
+          id = ++this.refCount;
+          this.refIds.set(input as WeakKey, id);
+        }
+        return `#${id}`;
+      }
+      return 'null';
+    }
+    return type;
+  }
+
+  /**
+   * Creates a cache key from input and config.
+   *
+   * @param input The input value.
+   * @param config The parse configuration.
+   *
+   * @returns The cache key.
+   */
+  key(input: unknown, config: Config<BaseIssue<unknown>> = {}): string {
+    if (typeof input === 'symbol') {
+      return 'symbol';
+    }
+    return `${this.#stringify(input)}|${this.#stringify(config.lang)}|${this.#stringify(
+      config.message
+    )}|${this.#stringify(config.abortEarly)}|${this.#stringify(
+      config.abortPipeEarly
+    )}`;
+  }
+
+  /**
+   * Gets a value from the cache by key.
+   *
+   * @param key The cache key.
+   *
+   * @returns The cached value.
+   */
+  get(key: string): TValue | undefined {
+    if (!this.store) return undefined;
+
     // Get entry tuple [value, timestamp]
     const entry = this.store.get(key);
 
@@ -39,7 +107,15 @@ class _LruCache<TValue> implements Cache<TValue> {
     return entry[0];
   }
 
-  set(key: unknown, value: TValue): void {
+  /**
+   * Sets a value in the cache by key.
+   *
+   * @param key The cache key.
+   * @param value The cached value.
+   */
+  set(key: string, value: TValue): void {
+    this.store ??= new Map();
+
     // Delete first to ensure insertion at end for correct ordering
     this.store.delete(key);
 
@@ -53,8 +129,11 @@ class _LruCache<TValue> implements Cache<TValue> {
     }
   }
 
+  /**
+   * Clears all entries from the cache.
+   */
   clear(): void {
-    this.store.clear();
+    this.store?.clear();
   }
 }
 

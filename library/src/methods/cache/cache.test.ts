@@ -1,69 +1,97 @@
-import { afterAll, beforeEach, describe, expect, test, vi } from 'vitest';
+import { describe, expect, test, vi } from 'vitest';
+import { minLength } from '../../actions/index.ts';
 import { string } from '../../schemas/index.ts';
-import { cache } from './cache.ts';
+import { pipe } from '../index.ts';
+import { cache, type SchemaWithCache } from './cache.ts';
 
 describe('cache', () => {
-  test('should cache output', () => {
-    const baseSchema = string();
-    const runSpy = vi.spyOn(baseSchema, '~run');
-    const schema = cache(baseSchema);
-    expect(schema['~run']({ value: 'foo' }, {})).toBe(
-      schema['~run']({ value: 'foo' }, {})
-    );
-    expect(runSpy).toHaveBeenCalledTimes(1);
-  });
+  describe('should return schema object', () => {
+    const schema = string();
+    type Schema = typeof schema;
+    const baseSchema: Omit<SchemaWithCache<Schema, never>, 'cacheConfig'> = {
+      ...schema,
+      cache: expect.any(Object),
+      '~run': expect.any(Function),
+    };
 
-  test('should allow custom max size', () => {
-    const schema = cache(string(), { maxSize: 2 });
-    expect(schema.cacheConfig.maxSize).toBe(2);
-
-    const fooDataset = schema['~run']({ value: 'foo' }, {});
-    expect(schema['~run']({ value: 'foo' }, {})).toBe(fooDataset);
-
-    expect(schema['~run']({ value: 'bar' }, {})).toBe(
-      schema['~run']({ value: 'bar' }, {})
-    );
-
-    expect(schema['~run']({ value: 'baz' }, {})).toBe(
-      schema['~run']({ value: 'baz' }, {})
-    );
-
-    expect(schema['~run']({ value: 'foo' }, {})).not.toBe(fooDataset);
-  });
-
-  describe('should allow custom max age', () => {
-    beforeEach(() => {
-      vi.useFakeTimers();
-    });
-    afterAll(() => {
-      vi.useRealTimers();
+    test('without cache config', () => {
+      expect(cache(schema)).toStrictEqual({
+        ...baseSchema,
+        cacheConfig: undefined,
+        '~standard': {
+          version: 1,
+          vendor: 'valibot',
+          validate: expect.any(Function),
+        },
+      } satisfies SchemaWithCache<Schema, undefined>);
     });
 
-    test('and clear expired values', () => {
-      const schema = cache(string(), { maxAge: 1000 });
-
-      const fooDataset = schema['~run']({ value: 'foo' }, {});
-      expect(schema['~run']({ value: 'foo' }, {})).toBe(fooDataset);
-      vi.advanceTimersByTime(1001);
-      expect(schema['~run']({ value: 'foo' }, {})).not.toBe(fooDataset);
-    });
-
-    test('and not reset expiry on get', () => {
-      const schema = cache(string(), { maxAge: 1000 });
-      const fooDataset = schema['~run']({ value: 'foo' }, {});
-      expect(schema['~run']({ value: 'foo' }, {})).toBe(fooDataset);
-      vi.advanceTimersByTime(500);
-      expect(schema['~run']({ value: 'foo' }, {})).toBe(fooDataset);
-      vi.advanceTimersByTime(501);
-      expect(schema['~run']({ value: 'foo' }, {})).not.toBe(fooDataset);
+    test('with cache config', () => {
+      expect(cache(schema, { maxSize: 123 })).toStrictEqual({
+        ...baseSchema,
+        cacheConfig: { maxSize: 123 },
+        '~standard': {
+          version: 1,
+          vendor: 'valibot',
+          validate: expect.any(Function),
+        },
+      } satisfies SchemaWithCache<Schema, { maxSize: 123 }>);
     });
   });
 
-  test('should expose cache for manual clearing', () => {
-    const schema = cache(string());
-    const fooDataset = schema['~run']({ value: 'foo' }, {});
-    expect(schema['~run']({ value: 'foo' }, {})).toBe(fooDataset);
-    schema.cache.clear();
-    expect(schema['~run']({ value: 'foo' }, {})).not.toBe(fooDataset);
+  describe('should cache output', () => {
+    test('for same input and config', () => {
+      const baseSchema = string();
+      const runSpy = vi.spyOn(baseSchema, '~run');
+      const schema = cache(baseSchema);
+
+      expect(schema['~run']({ value: 'foo' }, {})).toBe(
+        schema['~run']({ value: 'foo' }, {})
+      );
+      expect(runSpy).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  describe('should respect config changes', () => {
+    test('for lang config', () => {
+      const baseSchema = string();
+      const runSpy = vi.spyOn(baseSchema, '~run');
+      const schema = cache(baseSchema);
+      const defaultDataset = schema['~run']({ value: 'foo' }, {});
+      const langDataset = schema['~run']({ value: 'foo' }, { lang: 'de' });
+
+      expect(defaultDataset).not.toBe(langDataset);
+      expect(schema['~run']({ value: 'foo' }, {})).toBe(defaultDataset);
+      expect(schema['~run']({ value: 'foo' }, { lang: 'de' })).toBe(
+        langDataset
+      );
+      expect(runSpy).toHaveBeenCalledTimes(2);
+    });
+
+    test('for abort config', () => {
+      const schema = cache(pipe(string(), minLength(4), minLength(6)));
+      const defaultDataset = schema['~run']({ value: 'foo' }, {});
+      const abortDataset = schema['~run'](
+        { value: 'foo' },
+        { abortEarly: true }
+      );
+
+      expect(defaultDataset).not.toBe(abortDataset);
+      expect(defaultDataset.issues).toHaveLength(2);
+      expect(abortDataset.issues).toHaveLength(1);
+    });
+  });
+
+  describe('should expose cache for manual clearing', () => {
+    test('to invalidate cached output', () => {
+      const schema = cache(string());
+      const dataset = schema['~run']({ value: 'foo' }, {});
+
+      expect(schema['~run']({ value: 'foo' }, {})).toBe(dataset);
+
+      schema.cache.clear();
+
+      expect(schema['~run']({ value: 'foo' }, {})).not.toBe(dataset);
+    });
   });
 });
