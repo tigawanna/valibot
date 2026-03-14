@@ -1,6 +1,6 @@
 ---
-title: JwtAction
-description: JWT action interface.
+title: JwsCompactAction
+description: JWS compact action interface for JWT validation.
 contributors:
   - yslpn
 ---
@@ -8,9 +8,11 @@ contributors:
 import { Property } from '~/components';
 import { properties } from './properties';
 
-# JwtAction
+# JwsCompactAction
 
-JWT action interface.
+JWS compact action interface.
+
+Used by `jwsCompact` when validating JWT strings that use JWS compact serialization.
 
 ## Generics
 
@@ -19,7 +21,7 @@ JWT action interface.
 
 ## Definition
 
-- `JwtAction` <Property {...properties.BaseValidation} />
+- `JwsCompactAction` <Property {...properties.BaseValidation} />
   - `type` <Property {...properties.type} />
   - `reference` <Property {...properties.reference} />
   - `expects` <Property {...properties.expects} />

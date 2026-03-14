@@ -1,6 +1,6 @@
 ---
-title: JwtIssue
-description: JWT issue interface.
+title: JwsCompactIssue
+description: JWS compact issue interface for JWT validation.
 contributors:
   - yslpn
 ---
@@ -8,9 +8,11 @@ contributors:
 import { Property } from '~/components';
 import { properties } from './properties';
 
-# JwtIssue
+# JwsCompactIssue
 
-JWT issue interface.
+JWS compact issue interface.
+
+Used by `jwsCompact` when a JWT string does not match JWS compact serialization.
 
 ## Generics
 
@@ -18,7 +20,7 @@ JWT issue interface.
 
 ## Definition
 
-- `JwtIssue` <Property {...properties.BaseIssue} />
+- `JwsCompactIssue` <Property {...properties.BaseIssue} />
   - `kind` <Property {...properties.kind} />
   - `type` <Property {...properties.type} />
   - `expected` <Property {...properties.expected} />

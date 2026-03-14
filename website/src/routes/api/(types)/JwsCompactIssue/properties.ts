@@ -28,7 +28,7 @@ export const properties: Record<string, PropertyProps> = {
   type: {
     type: {
       type: 'string',
-      value: 'jwt',
+      value: 'jws_compact',
     },
   },
   expected: {

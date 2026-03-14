@@ -1,48 +1,52 @@
 import { describe, expect, test } from 'vitest';
-import { JWT_REGEX } from '../../regex.ts';
+import { JWS_COMPACT_REGEX } from '../../regex.ts';
 import type { StringIssue } from '../../schemas/index.ts';
 import { expectActionIssue, expectNoActionIssue } from '../../vitest/index.ts';
-import { jwt, type JwtAction, type JwtIssue } from './jwt.ts';
+import {
+  jwsCompact,
+  type JwsCompactAction,
+  type JwsCompactIssue,
+} from './jwsCompact.ts';
 
-describe('jwt', () => {
+describe('jwsCompact', () => {
   describe('should return action object', () => {
-    const baseAction: Omit<JwtAction<string, never>, 'message'> = {
+    const baseAction: Omit<JwsCompactAction<string, never>, 'message'> = {
       kind: 'validation',
-      type: 'jwt',
-      reference: jwt,
+      type: 'jws_compact',
+      reference: jwsCompact,
       expects: null,
-      requirement: JWT_REGEX,
+      requirement: JWS_COMPACT_REGEX,
       async: false,
       '~run': expect.any(Function),
     };
 
     test('with undefined message', () => {
-      const action: JwtAction<string, undefined> = {
+      const action: JwsCompactAction<string, undefined> = {
         ...baseAction,
         message: undefined,
       };
-      expect(jwt()).toStrictEqual(action);
-      expect(jwt(undefined)).toStrictEqual(action);
+      expect(jwsCompact()).toStrictEqual(action);
+      expect(jwsCompact(undefined)).toStrictEqual(action);
     });
 
     test('with string message', () => {
-      expect(jwt('message')).toStrictEqual({
+      expect(jwsCompact('message')).toStrictEqual({
         ...baseAction,
         message: 'message',
-      } satisfies JwtAction<string, string>);
+      } satisfies JwsCompactAction<string, string>);
     });
 
     test('with function message', () => {
       const message = () => 'message';
-      expect(jwt(message)).toStrictEqual({
+      expect(jwsCompact(message)).toStrictEqual({
         ...baseAction,
         message,
-      } satisfies JwtAction<string, typeof message>);
+      } satisfies JwsCompactAction<string, typeof message>);
     });
   });
 
   describe('should return dataset without issues', () => {
-    const action = jwt();
+    const action = jwsCompact();
 
     test('for untyped inputs', () => {
       const issues: [StringIssue] = [
@@ -64,7 +68,7 @@ describe('jwt', () => {
       });
     });
 
-    test('for valid JWTs', () => {
+    test('for valid JWS compact strings', () => {
       expectNoActionIssue(action, [
         'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c',
         'eyJhbGciOiJSUzI1NiIsImtpZCI6IjEifQ.eyJpc3MiOiJleGFtcGxlLmNvbSIsImV4cCI6MTY4MTk3OTAyMn0.DBjftJeZ4CVP-mB92K27uhbUJU1p1r_wW1gFWFOEjXk',
@@ -78,13 +82,13 @@ describe('jwt', () => {
   });
 
   describe('should return dataset with issues', () => {
-    const action = jwt('message');
-    const baseIssue: Omit<JwtIssue<string>, 'input' | 'received'> = {
+    const action = jwsCompact('message');
+    const baseIssue: Omit<JwsCompactIssue<string>, 'input' | 'received'> = {
       kind: 'validation',
-      type: 'jwt',
+      type: 'jws_compact',
       expected: null,
       message: 'message',
-      requirement: JWT_REGEX,
+      requirement: JWS_COMPACT_REGEX,
     };
 
     test('for empty strings', () => {

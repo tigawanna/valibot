@@ -17,8 +17,8 @@ export const properties: Record<string, PropertyProps> = {
           generics: [
             {
               type: 'custom',
-              name: 'JwtIssue',
-              href: '../JwtIssue/',
+              name: 'JwsCompactIssue',
+              href: '../JwsCompactIssue/',
               generics: [
                 {
                   type: 'custom',
@@ -32,12 +32,17 @@ export const properties: Record<string, PropertyProps> = {
       ],
     },
   },
-  BaseValidation: {
-    modifier: 'extends',
+  message: {
     type: {
       type: 'custom',
-      name: 'BaseValidation',
-      href: '../BaseValidation/',
+      name: 'TMessage',
+    },
+  },
+  Action: {
+    type: {
+      type: 'custom',
+      name: 'JwsCompactAction',
+      href: '../JwsCompactAction/',
       generics: [
         {
           type: 'custom',
@@ -45,49 +50,9 @@ export const properties: Record<string, PropertyProps> = {
         },
         {
           type: 'custom',
-          name: 'TInput',
-        },
-        {
-          type: 'custom',
-          name: 'JwtIssue',
-          href: '../JwtIssue/',
-          generics: [
-            {
-              type: 'custom',
-              name: 'TInput',
-            },
-          ],
+          name: 'TMessage',
         },
       ],
-    },
-  },
-  type: {
-    type: {
-      type: 'string',
-      value: 'jwt',
-    },
-  },
-  reference: {
-    type: {
-      type: 'custom',
-      modifier: 'typeof',
-      name: 'jwt',
-      href: '../jwt/',
-    },
-  },
-  expects: {
-    type: 'null',
-  },
-  requirement: {
-    type: {
-      type: 'custom',
-      name: 'RegExp',
-    },
-  },
-  message: {
-    type: {
-      type: 'custom',
-      name: 'TMessage',
     },
   },
 };

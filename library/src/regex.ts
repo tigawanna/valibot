@@ -126,9 +126,10 @@ export const ISO_TIMESTAMP_REGEX: RegExp =
 export const ISO_WEEK_REGEX: RegExp = /^\d{4}-W(?:0[1-9]|[1-4]\d|5[0-3])$/u;
 
 /**
- * [JSON Web Token](https://en.wikipedia.org/wiki/JSON_Web_Token) regex.
+ * [JWS compact serialization](https://datatracker.ietf.org/doc/html/rfc7515#section-3.1)
+ * regex.
  */
-export const JWT_REGEX: RegExp =
+export const JWS_COMPACT_REGEX: RegExp =
   /^(?:[\w-]{2,3}|(?:[\w-]{4})+(?:[\w-]{2,3})?)\.(?:[\w-]{2,3}|(?:[\w-]{4})+(?:[\w-]{2,3})?)\.(?:[\w-]{2,3}|(?:[\w-]{4})+(?:[\w-]{2,3})?)?$/u;
 
 /**
