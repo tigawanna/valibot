@@ -31,6 +31,10 @@ export type SchemaWithCache<
 /**
  * Caches the output of a schema.
  *
+ * Hint: Primitive inputs are cached by value. Object and function inputs are
+ * cached by reference identity, so mutating an input object and reusing the
+ * same reference can return a stale cached dataset.
+ *
  * @param schema The schema to cache.
  *
  * @returns The cached schema.
@@ -41,6 +45,10 @@ export function cache<
 
 /**
  * Caches the output of a schema.
+ *
+ * Hint: Primitive inputs are cached by value. Object and function inputs are
+ * cached by reference identity, so mutating an input object and reusing the
+ * same reference can return a stale cached dataset.
  *
  * @param schema The schema to cache.
  * @param config The cache config.

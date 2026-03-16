@@ -6,6 +6,9 @@ import type { BaseIssue, Config } from '../../types/index.ts';
 export interface Cache<TValue> {
   /**
    * Creates a cache key from input and config.
+   *
+   * Hint: Primitive inputs are keyed by value. Object and function inputs are
+   * keyed by reference identity.
    */
   key(input: unknown, config?: Config<BaseIssue<unknown>>): string;
   /**
