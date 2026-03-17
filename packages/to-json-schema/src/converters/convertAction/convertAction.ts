@@ -221,7 +221,14 @@ export function convertAction(
     case 'octal':
     case 'slug':
     case 'ulid': {
-      jsonSchema.pattern = valibotAction.requirement.source;
+      if (jsonSchema.pattern) {
+        errors = addError(
+          errors,
+          `The "${valibotAction.type}" action is not supported in combination with another regex action.`
+        );
+      } else {
+        jsonSchema.pattern = valibotAction.requirement.source;
+      }
       break;
     }
 
@@ -237,7 +244,14 @@ export function convertAction(
     }
 
     case 'ends_with': {
-      jsonSchema.pattern = `${escapeRegExp(valibotAction.requirement)}$`;
+      if (jsonSchema.pattern) {
+        errors = addError(
+          errors,
+          `The "${valibotAction.type}" action is not supported in combination with another regex action.`
+        );
+      } else {
+        jsonSchema.pattern = `${escapeRegExp(valibotAction.requirement)}$`;
+      }
       break;
     }
 
@@ -295,7 +309,14 @@ export function convertAction(
     }
 
     case 'includes': {
-      jsonSchema.pattern = escapeRegExp(valibotAction.requirement);
+      if (jsonSchema.pattern) {
+        errors = addError(
+          errors,
+          `The "${valibotAction.type}" action is not supported in combination with another regex action.`
+        );
+      } else {
+        jsonSchema.pattern = escapeRegExp(valibotAction.requirement);
+      }
       break;
     }
 
@@ -331,7 +352,14 @@ export function convertAction(
     }
 
     case 'jws_compact': {
-      jsonSchema.pattern = valibotAction.requirement.source;
+      if (jsonSchema.pattern) {
+        errors = addError(
+          errors,
+          `The "${valibotAction.type}" action is not supported in combination with another regex action.`
+        );
+      } else {
+        jsonSchema.pattern = valibotAction.requirement.source;
+      }
       break;
     }
 
@@ -507,7 +535,14 @@ export function convertAction(
           'RegExp flags are not supported by JSON Schema.'
         );
       }
-      jsonSchema.pattern = valibotAction.requirement.source;
+      if (jsonSchema.pattern) {
+        errors = addError(
+          errors,
+          `The "${valibotAction.type}" action is not supported in combination with another regex action.`
+        );
+      } else {
+        jsonSchema.pattern = valibotAction.requirement.source;
+      }
       break;
     }
 
@@ -529,7 +564,14 @@ export function convertAction(
     }
 
     case 'starts_with': {
-      jsonSchema.pattern = `^${escapeRegExp(valibotAction.requirement)}`;
+      if (jsonSchema.pattern) {
+        errors = addError(
+          errors,
+          `The "${valibotAction.type}" action is not supported in combination with another regex action.`
+        );
+      } else {
+        jsonSchema.pattern = `^${escapeRegExp(valibotAction.requirement)}`;
+      }
       break;
     }
 

@@ -314,6 +314,19 @@ describe('convertAction', () => {
     });
   });
 
+  test('should throw error for pattern action with existing pattern', () => {
+    const jsonSchema = convertAction(
+      { type: 'string' },
+      v.startsWith<string, 'pre'>('pre'),
+      undefined
+    );
+    const error =
+      'The "ends_with" action is not supported in combination with another regex action.';
+    expect(() =>
+      convertAction(jsonSchema, v.endsWith<string, 'suf'>('suf'), undefined)
+    ).toThrowError(error);
+  });
+
   test('should convert empty action for strings', () => {
     expect(
       convertAction({ type: 'string' }, v.empty(), undefined)
@@ -475,6 +488,22 @@ describe('convertAction', () => {
       type: 'string',
       pattern: 'foo\\.bar',
     });
+  });
+
+  test('should warn error for pattern action with existing pattern', () => {
+    expect(
+      convertAction(
+        { type: 'string', pattern: '^pre' },
+        v.includes<string, 'foo'>('foo'),
+        { errorMode: 'warn' }
+      )
+    ).toStrictEqual({
+      type: 'string',
+      pattern: '^pre',
+    });
+    expect(console.warn).toHaveBeenLastCalledWith(
+      'The "includes" action is not supported in combination with another regex action.'
+    );
   });
 
   test('should convert integer action', () => {
