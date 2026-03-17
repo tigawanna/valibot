@@ -132,6 +132,7 @@ describe('jwsCompact', () => {
         'abcd.efgh.ij@l',
         'segment.twopart.si gnature',
         'segment.twopart.si\\u00a9gnature',
+        'segment.twopart.si©gnature',
       ]);
     });
   });

@@ -28,9 +28,9 @@ const Action = v.jwsCompact<TInput, TMessage>(message);
 
 ### Explanation
 
-With `jwsCompact` you can validate that a string matches the three-part compact serialization of a JWS with unpadded Base64URL segments. If the input is not a JWS compact string, you can use `message` to customize the error message.
+With `jwsCompact` you can validate that a string matches the three-part compact string shape used by JWS compact serialization with unpadded Base64URL-like segments. If the input does not match this JWS compact string shape, you can use `message` to customize the error message.
 
-> This validation action only checks the structural format of a JWS compact string. It does not decode the token, verify the signature, or validate individual claims. Empty payload and signature segments are accepted when they appear as valid compact-serialization segments.
+> Hint: This validation action only checks the three-part compact string shape. It does not decode the segments, verify the signature, or validate claims. Empty payload and signature segments are accepted when they appear as valid compact-serialization segments.
 >
 > If you need full JWT validation, signature verification, or claim checks, use a dedicated library such as one from [jwt.io/libraries](https://www.jwt.io/libraries).
 
@@ -44,7 +44,7 @@ The following examples show how `jwsCompact` can be used.
 
 ### Access token schema
 
-Schema to validate that an access token string looks like a JWS compact string.
+Schema to validate that an access token string matches the JWS compact string shape.
 
 ```ts
 const AccessTokenSchema = v.pipe(
@@ -52,15 +52,6 @@ const AccessTokenSchema = v.pipe(
   v.nonEmpty('Provide an access token.'),
   v.jwsCompact('The token must be a valid JWS compact string.')
 );
-```
-
-### Parsing tokens
-
-Validates a JWS compact string and throws when the format is invalid.
-
-```ts
-const token = getToken();
-const accessToken = v.parse(AccessTokenSchema, token);
 ```
 
 ## Related

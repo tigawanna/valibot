@@ -8,6 +8,8 @@ import { _addIssue } from '../../utils/index.ts';
 
 /**
  * JWS compact issue interface.
+ *
+ * @beta
  */
 export interface JwsCompactIssue<TInput extends string>
   extends BaseIssue<TInput> {
@@ -35,6 +37,8 @@ export interface JwsCompactIssue<TInput extends string>
 
 /**
  * JWS compact action interface.
+ *
+ * @beta
  */
 export interface JwsCompactAction<
   TInput extends string,
@@ -66,7 +70,13 @@ export interface JwsCompactAction<
  * Creates a [JWS compact serialization](https://datatracker.ietf.org/doc/html/rfc7515#section-3.1)
  * validation action.
  *
+ * Hint: This validation action only checks the three-part compact string shape
+ * with unpadded Base64URL-like segments. It does not decode the segments,
+ * verify the signature, or validate claims.
+ *
  * @returns A JWS compact action.
+ *
+ * @beta
  */
 export function jwsCompact<TInput extends string>(): JwsCompactAction<
   TInput,
@@ -77,9 +87,15 @@ export function jwsCompact<TInput extends string>(): JwsCompactAction<
  * Creates a [JWS compact serialization](https://datatracker.ietf.org/doc/html/rfc7515#section-3.1)
  * validation action.
  *
+ * Hint: This validation action only checks the three-part compact string shape
+ * with unpadded Base64URL-like segments. It does not decode the segments,
+ * verify the signature, or validate claims.
+ *
  * @param message The error message.
  *
  * @returns A JWS compact action.
+ *
+ * @beta
  */
 export function jwsCompact<
   TInput extends string,
