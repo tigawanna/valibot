@@ -4,7 +4,30 @@ All notable changes to the library will be documented in this file.
 
 ## vX.X.X (Month DD, YYYY)
 
+- Change `BASE64_REGEX`, `EMAIL_REGEX`, `IPV6_REGEX`, `IP_REGEX`, `MAC48_REGEX`, `MAC64_REGEX`, `MAC_REGEX` and `UUID_REGEX` to drop the `i` flag for better JSON Schema compatibility (pull request #1430)
+- Change `hash` action to use case-expanded character classes instead of the `i` flag (pull request #1430)
+
+## v1.3.0 (March 17, 2026)
+
+- Add `guard` transformation action to narrow types using type predicates (pull request #1204)
+- Add `parseBoolean` transformation action to parse boolean values from strings and other types (pull request #1251)
+- Add `isrc` validation action to validate ISRC codes (pull request #1373)
+- Add `cache` method for caching schema output by input (pull request #1170)
+- Add `domain` validation action to validate domain names (pull request #1284)
+- Add `jwsCompact` validation action to validate JWS compact strings (pull request #1348)
+- Fix `creditCard` validation action to allow 13-digit Visa card numbers (pull request #1347)
+- Fix `isoTimestamp` validation action to allow optional space before UTC offset for PostgreSQL `timestamptz` compatibility (pull request #1195)
+- Fix types for deeply readonly default and fallback values
+
+## v1.2.0 (November 24, 2025)
+
+- Add `toBigint`, `toBoolean`, `toDate`, `toNumber` and `toString` transformation actions (pull request #1212)
+- Add `examples` action to add example values to a schema (pull request #1199)
+- Add `getExamples` method to extract example values from a schema (pull request #1199)
+- Add `isbn` validation action to validate ISBN-10 and ISBN-13 strings (pull request #1097)
+- Add exports for `RawCheckAddIssue`, `RawCheckContext`, `RawCheckIssueInfo`, `RawTransformAddIssue`, `RawTransformContext` and `RawTransformIssueInfo` types for better developer experience with `rawCheck` and `rawTransform` actions (pull request #1359)
 - Change build step to tsdown
+- Fix ReDoS vulnerability in `EMOJI_REGEX` used by `emoji` action
 
 ## v1.1.0 (May 06, 2025)
 
@@ -272,7 +295,7 @@ All notable changes to the library will be documented in this file.
 
 ## v0.20.0 (October 31, 2023)
 
-> Note: The library has been revised and refactored. There is a migration guide in the [release notes](https://github.com/fabian-hiller/valibot/releases/tag/v0.20.0).
+> Note: The library has been revised and refactored. There is a migration guide in the [release notes](https://github.com/open-circle/valibot/releases/tag/v0.20.0).
 
 - Add `getRestAndDefaultArgs` utility function
 - Add `rest` argument to `object` and `objectAsync` schema
@@ -358,7 +381,7 @@ All notable changes to the library will be documented in this file.
 
 ## v0.13.0 (August 23, 2023)
 
-> Note: The library has been revised and refactored. There is a migration guide in the [release notes](https://github.com/fabian-hiller/valibot/releases/tag/v0.13.0).
+> Note: The library has been revised and refactored. There is a migration guide in the [release notes](https://github.com/open-circle/valibot/releases/tag/v0.13.0).
 
 - Add `fallback` and `fallbackAsync` method (pull request #103)
 - Add `excludes` validation as negation of `includes`
