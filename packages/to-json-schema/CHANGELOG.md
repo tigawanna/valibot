@@ -2,7 +2,7 @@
 
 All notable changes to the library will be documented in this file.
 
-## vX.X.X (Month DD, YYYY)
+## v1.6.0 (March 17, 2026)
 
 - Add support for `never` schema (pull request #1430)
 - Add support for `endsWith`, `gtValue`, `hash`, `includes`, `isoTimeSecond`, `isoWeek`, `isrc`, `ltValue`, `mac`, `mac48`, `mac64`, `notValue`, `notValues`, `rfcEmail`, `safeInteger`, `slug`, `startsWith` and `values` actions (pull request #1430)
