@@ -69,7 +69,7 @@ This package is particularly popular for:
 | `endsWith`      | ✅     |                                                             |
 | `entries`       | ✅     |                                                             |
 | `examples`      | ✅     |                                                             |
-| `gtValue`       | ⚠️     | Only in combination with `number` schema                    |
+| `gtValue`       | ⚠️     | Only in combination with `number` and `integer` schema      |
 | `hash`          | ✅     |                                                             |
 | `hexadecimal`   | ✅     |                                                             |
 | `hexColor`      | ✅     |                                                             |
@@ -86,7 +86,7 @@ This package is particularly popular for:
 | `isrc`          | ✅     |                                                             |
 | `jwsCompact`    | ✅     |                                                             |
 | `length`        | ⚠️     | Only in combination with `string` and `array` schema        |
-| `ltValue`       | ⚠️     | Only in combination with `number` schema                    |
+| `ltValue`       | ⚠️     | Only in combination with `number` and `integer` schema      |
 | `mac`           | ✅     |                                                             |
 | `mac48`         | ✅     |                                                             |
 | `mac64`         | ✅     |                                                             |

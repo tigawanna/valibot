@@ -513,8 +513,18 @@ export function convertAction(
 
     case 'safe_integer': {
       jsonSchema.type = 'integer';
-      jsonSchema.minimum = Number.MIN_SAFE_INTEGER;
-      jsonSchema.maximum = Number.MAX_SAFE_INTEGER;
+      if (
+        typeof jsonSchema.minimum !== 'number' ||
+        jsonSchema.minimum < Number.MIN_SAFE_INTEGER
+      ) {
+        jsonSchema.minimum = Number.MIN_SAFE_INTEGER;
+      }
+      if (
+        typeof jsonSchema.maximum !== 'number' ||
+        jsonSchema.maximum > Number.MAX_SAFE_INTEGER
+      ) {
+        jsonSchema.maximum = Number.MAX_SAFE_INTEGER;
+      }
       break;
     }
 

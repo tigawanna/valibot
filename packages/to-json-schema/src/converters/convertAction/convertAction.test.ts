@@ -1202,6 +1202,55 @@ describe('convertAction', () => {
     });
   });
 
+  test('should preserve stricter safe integer bounds', () => {
+    expect(
+      convertAction(
+        { type: 'number', minimum: 10, maximum: 20 },
+        v.safeInteger<number>(),
+        undefined
+      )
+    ).toStrictEqual({
+      type: 'integer',
+      minimum: 10,
+      maximum: 20,
+    });
+    expect(
+      convertAction(
+        {
+          type: 'number',
+          exclusiveMinimum: 10,
+          exclusiveMaximum: 20,
+        },
+        v.safeInteger<number>(),
+        undefined
+      )
+    ).toStrictEqual({
+      type: 'integer',
+      minimum: Number.MIN_SAFE_INTEGER,
+      maximum: Number.MAX_SAFE_INTEGER,
+      exclusiveMinimum: 10,
+      exclusiveMaximum: 20,
+    });
+  });
+
+  test('should clamp broader safe integer bounds', () => {
+    expect(
+      convertAction(
+        {
+          type: 'number',
+          minimum: Number.MIN_SAFE_INTEGER - 1,
+          maximum: Number.MAX_SAFE_INTEGER + 1,
+        },
+        v.safeInteger<number>(),
+        undefined
+      )
+    ).toStrictEqual({
+      type: 'integer',
+      minimum: Number.MIN_SAFE_INTEGER,
+      maximum: Number.MAX_SAFE_INTEGER,
+    });
+  });
+
   test('should convert starts with action', () => {
     expect(
       convertAction(

@@ -5,8 +5,8 @@ All notable changes to the library will be documented in this file.
 ## vX.X.X (Month DD, YYYY)
 
 - Add support for `never` schema (pull request #1430)
-- Add support for `endsWith`, `gtValue`, `hash`, `includes`, `isoTimeSecond`, `isoWeek`, `isrc`, `ltValue`, `mac`, `mac48`, `mac64`, `notValue`, `notValues`, `rfcEmail`, `safeInteger`, `slug`, `startsWith` and `values` action (pull request #1430)
-- Add JSON compatibility validation for `value`, `values`, `notValue` and `notValues` action requirements (pull request #1430)
+- Add support for `endsWith`, `gtValue`, `hash`, `includes`, `isoTimeSecond`, `isoWeek`, `isrc`, `ltValue`, `mac`, `mac48`, `mac64`, `notValue`, `notValues`, `rfcEmail`, `safeInteger`, `slug`, `startsWith` and `values` actions (pull request #1430)
+- Add JSON compatibility validation for the requirements of `value`, `values`, `notValue` and `notValues` actions (pull request #1430)
 - Add inferred `type` for `enum` and `picklist` schemas (pull request #1430)
 - Change Valibot peer dependency to v1.3.0
 
