@@ -32,7 +32,7 @@ const ValibotSchema = v.pipe(v.string(), v.email(), v.endsWith('@example.com'));
 
 When people talk about performance, they often focus only on runtime parsing speed. That is important, but it is not the whole story. For websites, web apps, and serverless runtimes, startup performance also matters a lot. This includes the time required to download the library, initialize your schemas, and get your code ready to run.
 
-This is one of Valibot's biggest strengths. On [Schema Benchmarks](https://schemabenchmarks.dev/download), Valibot currently needs only `1.91 kB` gzipped where as other schema libraries such as Zod v4 require `16.57 kB`. On the corresponding [initialization benchmark](https://schemabenchmarks.dev/initialization), the same schema is initialized in `54 μs` and therefore 16x faster than Zod v4.
+This is one of Valibot's biggest strengths. On [Schema Benchmarks](https://schemabenchmarks.dev/download), Valibot currently needs only `1.91 kB` gzipped whereas other schema libraries such as Zod v4 require `16.57 kB`. On the corresponding [initialization benchmark](https://schemabenchmarks.dev/initialization), the same schema is initialized in `54 μs` and therefore 16x faster than Zod v4.
 
 It is also interesting to see that even Zod now offers Zod Mini. This is a sign that modularity and tree shaking clearly matter to developers. Valibot might not ([yet](https://x.com/FabianHiller/status/2035416102810095689)) win every benchmark. But if you care about the full package instead of a single number, Valibot offers one of the best overall tradeoffs, also for runtime performance.
 
@@ -74,7 +74,7 @@ function formatIssue(issue: EmailIssue) {
 }
 ```
 
-I think this attention to detail leads to fewer mistakes, a better developer experience, and safe AI generated code, especially in TypeScript-heavy projects.
+I think this attention to detail leads to fewer mistakes, a better developer experience, and safe AI-generated code, especially in TypeScript-heavy projects.
 
 ## Everything in one pipeline
 
