@@ -1,6 +1,6 @@
 ---
 cover: Why Valibot?
-title: Why you should migrate to Valibot
+title: Why migrate to Valibot?
 description: >-
   Valibot is a modular schema library with excellent startup performance, a
   clear mental model, strong type safety, and a design that works especially
@@ -16,7 +16,7 @@ import MentalModelLight from './mental-model-light.jpg?jsx';
 
 Valibot is one of the most compelling schema libraries you can use today. It combines excellent startup performance, strong type safety, a very clear mental model, and a modular architecture that scales from simple form validation to advanced schema tooling.
 
-That combination is rare. Many libraries are fast but less introspectable, flexible but heavier, or familiar but harder to extend cleanly. Valibot strikes a very practical balance, which is why I think it has become such a strong option for modern TypeScript applications.
+That combination is rare. Many libraries are fast but less introspectable, flexible but heavier, or familiar but harder to extend cleanly. Valibot strikes a very practical balance, which is why it has become such a strong option for modern TypeScript applications.
 
 Even if you currently use another schema library, switching is usually not as dramatic as it might sound. In many cases, the code still looks very familiar.
 
@@ -34,7 +34,7 @@ When people talk about performance, they often focus only on runtime parsing spe
 
 This is one of Valibot's biggest strengths. On [Schema Benchmarks](https://schemabenchmarks.dev/download), Valibot currently needs only `1.91 kB` gzipped where as other schema libraries such as Zod v4 require `16.57 kB`. On the corresponding [initialization benchmark](https://schemabenchmarks.dev/initialization), the same schema is initialized in `54 μs` and therefore 16x faster than Zod v4.
 
-It is also interesting to see that even Zod now offers Zod Mini. This is a sign that modularity and tree shaking clearly matter to developers. Valibot might not wins every benchmark. But if you care about the full package instead of a single number, Valibot offers one of the best overall tradeoffs, also for runtime performance.
+It is also interesting to see that even Zod now offers Zod Mini. This is a sign that modularity and tree shaking clearly matter to developers. Valibot might not ([yet](https://x.com/FabianHiller/status/2035416102810095689)) win every benchmark. But if you care about the full package instead of a single number, Valibot offers one of the best overall tradeoffs, also for runtime performance.
 
 ## A clear mental model
 
@@ -51,38 +51,13 @@ One of the main reasons Valibot feels easy to use is that its mental model is ve
 
 Schemas validate raw data types like strings, numbers, objects, or unions. Methods help you use or modify a schema. Actions are used inside a pipeline to validate, transform, or describe data in more detail.
 
-That may sound simple, but it has a huge effect on developer experience. Once you understand these three building blocks, the rest of the library becomes much easier to reason about. This matters even more in larger codebases where schemas are shared across forms, API boundaries, workers, and internal utilities.
-
-## Valibot works well with AI coding agents
-
-I also think Valibot is a great fit for modern AI-assisted development. In that world, a schema library should not only be pleasant for humans to type by hand. It should also be easy for tools to inspect, understand, and modify.
-
-This is where Valibot's structure helps a lot. A schema is made up of explicit functions with a predictable shape. Instead of relying on a long chain of methods with subtly different semantics, Valibot keeps the structure of the schema visible in the code. That makes inspection, refactoring, and code generation easier for both humans and tools.
-
-I also believe that the traditional DX advantage of chaining APIs becomes less important when an AI agent writes most of the code anyway. What matters more is whether the code is regular, composable, and easy to transform safely. Valibot is very good at that.
-
-Pipelines can even carry metadata such as <Link href="/api/title/">`title`</Link>, <Link href="/api/description/">`description`</Link>, and <Link href="/api/metadata/">`metadata`</Link>. This is helpful not only for documentation, but also for AI tools that need more context about what a field represents.
-
-```ts
-import * as v from 'valibot';
-
-const UsernameSchema = v.pipe(
-  v.string(),
-  v.regex(/^[a-z0-9_-]{4,16}$/iu),
-  v.title('Username'),
-  v.description(
-    'A username must be between 4 and 16 characters long and can only contain letters, numbers, underscores and hyphens.'
-  )
-);
-```
-
-We also provide dedicated <Link href="/guides/llms-txt/">`llms.txt` routes</Link> for older or less powerful AI models and an installable agent skill described in our <Link href="/guides/installation/#for-ai-agents">installation guide</Link>. That makes it easier for AI tools to generate, migrate, and optimize schemas according to the current best practices.
+Once you understand these three building blocks, the rest of the library becomes much easier to reason about. This matters even more in larger codebases where schemas are shared across forms, API boundaries, workers, and internal utilities.
 
 ## More precise type safety
 
-Valibot does not stop at inferring the output type of a schema. It tries to preserve as much information as possible in a type-safe way. This includes the input and output type, metadata, defaults, and even the issues a schema can produce.
+Valibot does not stop at inferring the output type of a schema. It also gives you precise types for the issues a schema can produce. This becomes especially useful once you start formatting errors for users or building abstractions on top of your schemas.
 
-That becomes especially useful once you build abstractions on top of your schemas, format errors for users, or generate schema-aware helpers. Instead of falling back to broad generic types, Valibot gives you much more precise information to work with in your editor.
+More generally, Valibot tries to preserve as much information as possible in a type-safe way. This includes the input and output type, metadata, defaults, and issue details. Instead of falling back to broad generic types, Valibot gives you much more precise information to work with in your editor.
 
 ```ts
 import * as v from 'valibot';
@@ -105,7 +80,7 @@ I think this attention to detail leads to fewer mistakes, a better developer exp
 
 Another major advantage of Valibot is its pipeline design. Validation, transformation, and metadata all follow the same mental model. You start with a schema and then add more behavior step by step.
 
-This makes simple things easy while still scaling well to more advanced use cases. A pipeline can trim strings, validate formats, transform values, attach metadata, or even continue with another schema after a transformation. I like that all of this still feels like one system instead of a growing collection of special-case APIs.
+This makes simple things easy while still scaling well to more advanced use cases. A pipeline can trim strings, validate formats, transform values, attach metadata, or even continue with another schema after a transformation. All of this still feels like one system instead of a growing collection of special-case APIs.
 
 ```ts
 import * as v from 'valibot';
@@ -121,7 +96,7 @@ const PortSchema = v.pipe(
 );
 ```
 
-Pipelines also make schemas highly composable. You can take an existing schema and extend it without rewriting it from scratch.
+Pipelines also make schemas easy to extend. You can take an existing schema and build on top of it without rewriting it from scratch, a bit like adding another LEGO brick to something you already assembled.
 
 ```ts
 import * as v from 'valibot';
@@ -138,7 +113,7 @@ Small bundle size only matters if the library is still powerful enough for real 
 
 Valibot supports much more than basic primitives. It includes schemas for objects, records, maps, sets, unions, variants, functions, and promises. It also ships many validations such as <Link href="/api/email/">`email`</Link>, <Link href="/api/url/">`url`</Link>, <Link href="/api/uuid/">`uuid`</Link>, <Link href="/api/creditCard/">`creditCard`</Link>, and <Link href="/api/isoTimestamp/">`isoTimestamp`</Link>, plus transformations like <Link href="/api/trim/">`trim`</Link>, <Link href="/api/toLowerCase/">`toLowerCase`</Link>, <Link href="/api/toNumber/">`toNumber`</Link>, <Link href="/api/parseJson/">`parseJson`</Link>, and <Link href="/api/mapItems/">`mapItems`</Link>. We currently provide 46 schemas and 118 actions out-of-the-box, and we are adding more with every release.
 
-This means Valibot is not small because it does less. It is small because it is modular and fully tree-shakable. You get a lot out of the box without forcing every project to carry the full weight of the whole library. If you want an overview of what is included, feel free to browse our <Link href="/api/">API reference</Link>.
+This means Valibot is not small because it does less. It is small because it is modular and fully tree-shakable. You get a lot out of the box without forcing every project to carry the full weight of the whole library. If you want an overview of what is included, feel free to browse our <Link href="/api/">API reference</Link>. The ecosystem around Valibot is still growing, but because schemas and actions follow a shared interface, building your own extensions or wrappers is pretty straightforward.
 
 ## Easier to extend and reason about
 
@@ -165,6 +140,31 @@ function string(message) {
 ```
 
 If that sounds interesting, I recommend reading our <Link href="/guides/extend-valibot/">extend guide</Link>. It shows how custom schemas and actions can be built from scratch without giving up compatibility with the rest of the ecosystem.
+
+## Valibot works well with AI coding agents
+
+Valibot is also a great fit for modern AI-assisted development. In that world, a schema library should not only be pleasant for humans to type by hand. It should also be easy for tools to inspect, understand, and modify.
+
+This is where Valibot's structure helps a lot. A schema is made up of explicit functions with a predictable shape. Instead of relying on a long chain of methods with subtly different semantics, Valibot keeps the structure of the schema visible in the code. That makes inspection, refactoring, and code generation easier for both humans and tools.
+
+The traditional DX advantage of chaining APIs also becomes less important when an AI agent writes most of the code anyway. What matters more is whether the code is regular, composable, and easy to transform safely. Valibot is very good at that.
+
+Pipelines can even carry metadata such as <Link href="/api/title/">`title`</Link>, <Link href="/api/description/">`description`</Link>, and <Link href="/api/metadata/">`metadata`</Link>. This is helpful not only for documentation, but also for AI tools that need more context about what a field represents.
+
+```ts
+import * as v from 'valibot';
+
+const UsernameSchema = v.pipe(
+  v.string(),
+  v.regex(/^[a-z0-9_-]{4,16}$/iu),
+  v.title('Username'),
+  v.description(
+    'A username must be between 4 and 16 characters long and can only contain letters, numbers, underscores and hyphens.'
+  )
+);
+```
+
+We also provide dedicated <Link href="/guides/llms-txt/">`llms.txt` routes</Link> for older or less powerful AI models and an installable agent skill described in our <Link href="/guides/installation/#for-ai-agents">installation guide</Link>. That makes it easier for AI tools to generate, migrate, and optimize schemas according to the current best practices.
 
 ## Final thoughts
 
