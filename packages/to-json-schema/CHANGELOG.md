@@ -2,7 +2,7 @@
 
 All notable changes to the library will be documented in this file.
 
-## vX.X.X (Month DD, YYYY)
+## v1.7.1 (June 08, 2026)
 
 - Fix `$ref` generation to encode definition keys containing `/` or `~` as JSON Pointer tokens (pull request #1482)
 
